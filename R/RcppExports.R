@@ -25,7 +25,19 @@
     .Call(`_ecotraj_distanceToSegment`, dref, d1, d2, add)
 }
 
+.distanceToInterpolatedC <- function(dref, d1, d2, p, add = TRUE) {
+    .Call(`_ecotraj_distanceToInterpolated`, dref, d1, d2, p, add)
+}
+
 .twoSegmentDistanceC <- function(dmat12, type = "directed-segment", add = TRUE) {
     .Call(`_ecotraj_twoSegmentDistance`, dmat12, type, add)
+}
+
+.distanceToClusters <- function(dmat, umat) {
+    .Call(`_ecotraj_distanceToClusters`, dmat, umat)
+}
+
+.distanceBetweenClusters <- function(dmat, umat) {
+    .Call(`_ecotraj_distanceBetweenClusters`, dmat, umat)
 }
 

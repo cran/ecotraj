@@ -3,14 +3,13 @@
 \docType{package}
 \name{ecotraj-package}
 \alias{ecotraj-package}
-\alias{_PACKAGE}
 \alias{ecotraj}
 \title{ecotraj: Ecological Trajectory Analysis}
 \description{
 Assists ecologists in the analysis of temporal changes of ecosystems, defined as trajectories on a chosen multivariate space
 }
 \references{
-De Caceres et al., 2019 (\doi{10.1002/ecm.1350}), Sturbois et al., 2021 (\doi{10.1016/j.ecolmodel.2020.109400})
+De Caceres et al., 2019 (\doi{10.1002/ecm.1350}), Sturbois et al., 2021 (\doi{10.1016/j.ecolmodel.2020.109400}), Sturbois et al., 2023 (\doi{10.1002/ecs2.4726}).
 }
 \seealso{
 Useful links: \itemize{ \item{
@@ -22,7 +21,13 @@ Useful links: \itemize{ \item{
 \href{https://orcid.org/0000-0001-7132-2080}{ORCID}
 
 Authors: \itemize{
-\item{ Anthony Sturbois}
+\item{ Nicolas Djeghri
+\href{https://orcid.org/0000-0001-5740-3386}{ORCID}}
+\item{ Anthony Sturbois
+\href{https://orcid.org/0000-0002-9219-4468}{ORCID}}
+}
+Contributors: \itemize{
+\item{ Javier De la Casa}
 }
 }
 \keyword{internal}

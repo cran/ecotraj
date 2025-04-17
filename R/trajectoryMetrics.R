@@ -1,54 +1,36 @@
-#' Metrics for Ecological Trajectory Analysis
+#' Trajectory metrics
 #' 
-#' Ecological Trajectory Analysis (ETA) is a framework to analyze dynamics of ecosystems described as trajectories in a chosen space of multivariate resemblance (De \enc{Cáceres}{Caceres} et al. 2019).
-#' ETA takes trajectories as objects to be analyzed and compared geometrically. 
-#' 
-#' Given a distance matrix between ecosystem states, the set of functions that provide ETA metrics are:
+#' Set of functions to estimate metrics describing individual trajectories. Given input trajectory data, the set of functions that provide ETA metrics are:
 #' \itemize{
-#' \item{Functions \code{segmentDistances} and \code{trajectoryDistances} calculate the distance between pairs of directed segments and ecosystem trajectories, respectively.}
 #' \item{Function \code{trajectoryLengths} calculates lengths of directed segments and total path lengths of trajectories.}
 #' \item{Function \code{trajectoryLengths2D} calculates lengths of directed segments and total path lengths of trajectories from 2D coordinates given as input.} 
+#' \item{Function \code{trajectorySpeeds} calculates speeds of directed segments and total path speed of trajectories.}
+#' \item{Function \code{trajectorySpeeds2D} calculates speeds of directed segments and total path speed of trajectories from 2D coordinates given as input.} 
 #' \item{Function \code{trajectoryAngles} calculates the angle between consecutive pairs of directed segments or between segments of ordered triplets of points.}
 #' \item{Function \code{trajectoryAngles2D} calculates the angle between consecutive pairs of directed segments or between segments of ordered triplets of points.}
-#' \item{Function \code{trajectoryProjection} projects a set of target points onto a specified trajectory and returns the distance to the trajectory (i.e. rejection) and the relative position of the projection point within the trajectory.}
-#' \item{Function \code{trajectoryConvergence} performs the Mann-Kendall trend test on the distances between trajectories (symmetric test) or the distance between points of one trajectory to the other.}
-#' \item{Function \code{trajectoryDirectionality} returns (for each trajectory) a statistic that measures directionality of the whole trajectory.}
+#' \item{Function \code{trajectoryDirectionality} calculates (for each trajectory) a statistic that measures directionality of the whole trajectory.}
+#' \item{Function \code{trajectoryVariability} calculates (for each trajectory) a statistic that measures the variability between the states included in the trajectory.}
+#' \item{Function \code{trajectoryMetrics} evaluates several trajectory metrics at once.}
+#' \item{Function \code{trajectoryWindowMetrics} evaluates several trajectory metrics on subtrajectories defined using moving windows.}
 #' }
 #'  
 #' 
 #' @encoding UTF-8
-#' @name trajectorymetrics
-#' @aliases segmentDistances trajectoryDistances trajectoryLengths trajectoryLengths2D trajectoryAngles trajectoryAngles2D
-#'          trajectoryProjection trajectoryConvergence trajectoryDirectionality 
+#' @name trajectoryMetrics
 #' 
-#' @param d A symmetric \code{\link{matrix}} or an object of class \code{\link{dist}} containing the distance values between pairs of ecosystem states (see details).
-#' @param sites A vector indicating the site corresponding to each ecosystem state.
-#' @param surveys A vector indicating the survey corresponding to each ecosystem state (only necessary when surveys are not in order).
-#' @param distance.type 
-#' The type of distance index to be calculated (Besse et al. 2016; De Cáceres et al. submitted). For \code{segmentDistances} the available indices are:
-#'   \itemize{
-#'     \item{\code{Hausdorff}: Hausdorff distance between two segments.}
-#'     \item{\code{directed-segment}: Directed segment distance (default).}
-#'     \item{\code{PPA}: Perpendicular-parallel-angle distance.}
-#'   }
-#' whereas for \code{trajectoryDistances} the available indices are:
-#'   \itemize{
-#'     \item{\code{Hausdorff}: Hausdorff distance between two trajectories.}
-#'     \item{\code{SPD}: Segment path distance.}
-#'     \item{\code{DSPD}: Directed segment path distance (default).}
-#'   }
-#' @param symmetrization Function used to obtain a symmetric distance, so that DSPD(T1,T2) = DSPD(T2,T1) (e.g., \code{mean} or \code{min}). If \code{symmetrization = NULL} then the symmetrization is not conducted and the output dissimilarity matrix is not symmetric. 
+#' @param x An object of class \code{\link{trajectories}}.
+#' @param relativeToInitial Flag to indicate that lengths or angles should be calculated with respect to initial survey.
+#' @param all Flag to indicate that lengths or angles are desired for all segments or for all triangles (i.e. all pairs of segments) in the trajectory. If FALSE, length or angles are calculated according to relativeToInitial flag.
 #' @param add Flag to indicate that constant values should be added (local transformation) to correct triplets of distance values that do not fulfill the triangle inequality.
-#' @param verbose Provides console output informing about process (useful for large dataset).
 #' 
 #' @details 
-#' Details of calculations are given in De \enc{Cáceres}{Caceres} et al (2019). 
+#' Ecological Trajectory Analysis (ETA) is a framework to analyze dynamics of ecosystems described as trajectories in a chosen space of multivariate resemblance (De \enc{Cáceres}{Caceres} et al. 2019).
+#' ETA takes trajectories as objects to be analyzed and compared geometrically. 
+#' 
 #' The input distance matrix \code{d} should ideally be metric. That is, all subsets of distance triplets should fulfill the triangle inequality (see utility function \code{\link{is.metric}}). 
 #' All ETA functions that require metricity include a parameter '\code{add}', which by default is TRUE, meaning that whenever the triangle inequality is broken the minimum constant required to fulfill it is added to the three distances.
 #' If such local (an hence, inconsistent across triplets) corrections are not desired, users should find another way modify \code{d} to achieve metricity, such as PCoA, metric MDS or non-metric MDS (see vignette 'Introduction to Ecological Trajectory Analysis'). 
 #' If parameter '\code{add}' is set to FALSE and problems of triangle inequality exist, ETA functions may provide missing values in some cases where they should not.
-#' 
-#' The resemblance between trajectories is done by adapting concepts and procedures used for the analysis of trajectories in space (i.e. movement data) (Besse et al. 2016).   
 #' 
 #' Function \code{trajectoryAngles} calculates angles between consecutive segments in degrees. For each pair of segments, the angle between the two is defined on the plane that contains the two segments, and measures the change in direction (in degrees) from one segment to the other. 
 #' Angles are always positive, with zero values indicating segments that are in a straight line, and values equal to 180 degrees for segments that are in opposite directions. If \code{all = TRUE}
@@ -59,63 +41,49 @@
 #' If \code{all = TRUE} angles are calculated between the segments corresponding to all ordered triplets. Alternatively, if \code{relativeToInitial = TRUE} angles are calculated for each segment with respect to the initial survey.
 #' If \code{betweenSegments = TRUE} angles are calculated between segments of trajectory, otherwise, If \code{betweenSegments = FALSE}, angles are calculated considering Y axis as the North (0°).
 #' 
-#' @return Function \code{trajectoryDistances} returns an object of class \code{\link{dist}} containing the distances between trajectories (if \code{symmetrization = NULL} then the object returned is of class \code{matrix}). 
+#' Function \code{trajectoryDirectionality} evaluates the directionality metric proposed in De \enc{Cáceres}{Caceres} et al (2019). If \code{nperm} is supplied, then the function
+#' performs a permutational test to evaluate the significance of directionality, where the null hypothesis entails a random order of surveys within each trajectory. The p-value corresponds to the proportion of
+#' permutations with a directional value equal or larger than the observed.
+#'
+#' @return
 #' 
-#' Function \code{trajectorySegments} returns a list with the following elements:
-#' \itemize{
-#'   \item{\code{Dseg}: Distance matrix between segments.}
-#'   \item{\code{Dini}: Distance matrix between initial points of segments.}
-#'   \item{\code{Dfin}: Distance matrix between final points of segments.}
-#'   \item{\code{Dinifin}: Distance matrix between initial points of one segment and the final point of the other.}
-#'   \item{\code{Dfinini}: Distance matrix between final points of one segment and the initial point of the other.}
-#' }
-#' 
-#' Function \code{trajectoryLengths} returns a data frame with the length of each segment on each trajectory and the total length of all trajectories. 
+#' Functions \code{trajectoryLengths} and  \code{trajectoryLengths2D} return a data frame with the length of each segment on each trajectory and the total length of all trajectories. 
 #' If \code{relativeToInitial = TRUE} lengths are calculated between the initial survey and all the other surveys.
-#' If \code{all = TRUE} lengths are calculated for all segments.
+#' If \code{all = TRUE} lengths are calculated for all segments. 
 #' 
-#' Function \code{trajectoryLengths2D} returns a data frame with the length of each segment on each trajectory and the total length of all trajectories. 
-#' If \code{relativeToInitial = TRUE} lengths are calculated between the initial survey and all the other surveys.
-#' If \code{all = TRUE} lengths are calculated for all segments.
-#' 
+#' Functions \code{trajectorySpeeds} and \code{trajectorySpeeds2D} return a data frame with the speed of each segment on each trajectory and the total speeds of all trajectories. Units depend on the units of distance matrix and the units of \code{times} of the input trajectory data.
+#'
 #' Function \code{trajectoryAngles} returns a data frame with angle values on each trajectory. If \code{stats=TRUE}, then the mean, standard deviation and mean resultant length of those angles are also returned. 
 #' 
 #' Function \code{trajectoryAngles2D} returns a data frame with angle values on each trajectory. If \code{betweenSegments=TRUE}, then angles are calculated between trajectory segments, alternatively, If \code{betweenSegments=FALSE}, angles are calculated considering Y axis as the North (0°).
 #' 
-#' Function \code{trajectoryProjection} returns a data frame with the following columns:
-#' \itemize{
-#'   \item{\code{distanceToTrajectory}: Distances to the trajectory, i.e. rejection (\code{NA} for target points whose projection is outside the trajectory).}
-#'   \item{\code{segment}: Segment that includes the projected point (\code{NA} for target points whose projection is outside the trajectory).}
-#'   \item{\code{relativePosition}: Relative position of the projected point within the trajectory, i.e. values from 0 to 1 with 0 representing the start of the trajectory and 1 representing the end (\code{NA} for target points whose projection is outside the trajectory).}
-#' }
+#' Function \code{trajectoryDirectionality} returns a vector with directionality values (one per trajectory). If \code{nperm} is not missing, the function returns a data frame
+#' with a column of directional values and a column of p-values corresponding to the result of the permutational test.
 #' 
-#' Function \code{trajectoryConvergence} returns a list with two elements:
-#' \itemize{
-#'   \item{\code{tau}: A matrix with the statistic (Mann-Kendall's tau) of the convergence/divergence test between trajectories. If \code{symmetric=TRUE} then the matrix is square. Otherwise the statistic of the test of the row trajectory approaching the column trajectory.}
-#'   \item{\code{p.value}: A matrix with the p-value of the convergence/divergence test between trajectories. If \code{symmetric=TRUE} then the matrix is square. Otherwise the p-value indicates the test of the row trajectory approaching the column trajectory.}
-#' }
+#' Function \code{trajectoryVariability} returns a vector with total variability values (one per trajectory).
 #' 
-#' Function \code{trajectoryDirectionality} returns a vector with directionality values (one per trajectory).
+#' Function \code{trajectoryMetrics} returns a data frame where rows are trajectories and columns are different trajectory metrics.
 #' 
+#' Function \code{trajectoryWindowMetrics} returns a data frame where rows are midpoints over trajectories and columns correspond to different trajectory metrics.
 #' 
 #' @author Miquel De \enc{Cáceres}{Caceres}, CREAF
 #' @author Anthony Sturbois, Vivarmor nature, Réserve Naturelle nationale de la Baie de Saint-Brieuc
+#' @author Nicolas Djeghri, UBO
 #' 
 #' @references
-#' Besse, P., Guillouet, B., Loubes, J.-M. & François, R. (2016). Review and perspective for distance based trajectory clustering. IEEE Trans. Intell. Transp. Syst., 17, 3306–3317.
-#' 
 #' De \enc{Cáceres}{Caceres} M, Coll L, Legendre P, Allen RB, Wiser SK, Fortin MJ, Condit R & Hubbell S. (2019). 
 #' Trajectory analysis in community ecology. Ecological Monographs 89, e01350.
 #' 
-#' @seealso \code{\link{trajectoryplots}}, \code{\link{trajectoryutils}} 
+#' @seealso \code{\link{trajectoryComparison}}, \code{\link{trajectoryPlot}}, \code{\link{transformTrajectories}}, \code{\link{cycleMetrics}}
 #' 
 #' @examples 
 #' #Description of sites and surveys
-#' sites = c(1,1,1,2,2,2)
-#' surveys=c(1,2,3,1,2,3)
+#' sites <- c("1","1","1","2","2","2")
+#' surveys <- c(1, 2, 3, 1, 2, 3)
+#' times <- c(0, 1.5, 3, 0, 1.5, 3)
 #'   
 #' #Raw data table
-#' xy<-matrix(0, nrow=6, ncol=2)
+#' xy <- matrix(0, nrow=6, ncol=2)
 #' xy[2,2]<-1
 #' xy[3,2]<-2
 #' xy[4:6,1] <- 0.5
@@ -123,279 +91,51 @@
 #' xy[6,1]<-1
 #'   
 #' #Draw trajectories
-#' trajectoryPlot(xy, sites, surveys, 
+#' trajectoryPlot(xy, sites, surveys,  
 #'                traj.colors = c("black","red"), lwd = 2)
 #' 
 #' #Distance matrix
-#' d = dist(xy)
+#' d <- dist(xy)
 #' d
 #'   
-#' trajectoryLengths(d, sites, surveys)
+#' #Trajectory data
+#' x <- defineTrajectories(d, sites, surveys, times)
+#' 
+#' #Trajectory lengths
+#' trajectoryLengths(x)
 #' trajectoryLengths2D(xy, sites, surveys)
-#' trajectoryAngles(d, sites, surveys)
+#' 
+#' #Trajectory speeds
+#' trajectorySpeeds(x)
+#' trajectorySpeeds2D(xy, sites, surveys, times)
+#'
+#' #Trajectory angles
+#' trajectoryAngles(x)
 #' trajectoryAngles2D(xy, sites, surveys, betweenSegments = TRUE)
 #' trajectoryAngles2D(xy, sites, surveys, betweenSegments = FALSE)
-#' segmentDistances(d, sites, surveys)$Dseg
-#' trajectoryDistances(d, sites, surveys, distance.type = "Hausdorff")
-#' trajectoryDistances(d, sites, surveys, distance.type = "DSPD")
-#'   
-#'   
-#' #Should give the same results if surveys are not in order 
-#' #(here we switch surveys for site 2)
-#' temp = xy[5,]
-#' xy[5,] = xy[6,]
-#' xy[6,] = temp
-#' surveys[5] = 3
-#' surveys[6] = 2
-#'   
-#' trajectoryPlot(xy, sites, surveys, 
-#'                traj.colors = c("black","red"), lwd = 2)   
-#' trajectoryLengths(dist(xy), sites, surveys)
-#' trajectoryLengths2D(xy, sites, surveys)
-#' segmentDistances(dist(xy), sites, surveys)$Dseg
-#' trajectoryAngles(dist(xy), sites, surveys)
-#' trajectoryAngles2D(xy, sites, surveys, betweenSegments = TRUE)
-#' trajectoryAngles2D(xy, sites, surveys, betweenSegments = FALSE)
-#' trajectoryDistances(dist(xy), sites, surveys, distance.type = "Hausdorff")
-#' trajectoryDistances(dist(xy), sites, surveys, distance.type = "DSPD")
+#' 
+#' #Several metrics at once
+#' trajectoryMetrics(x)  
 #'  
 #' @export
-segmentDistances<-function(d, sites, surveys=NULL, distance.type ="directed-segment", add = TRUE, verbose=FALSE) {
-  distance.type <- match.arg(distance.type, c("directed-segment", "Hausdorff", "PPA"))
-  if(length(sites)!=nrow(as.matrix(d))) stop("'sites' needs to be of length equal to the number of rows/columns in d")
-  if(!is.null(surveys)) if(length(sites)!=length(surveys)) stop("'sites' and 'surveys' need to be of the same length")
+trajectoryLengths<-function(x, relativeToInitial = FALSE, all=FALSE) {
+  if(!inherits(x, "trajectories")) stop("'x' should be of class `trajectories`")
   
-  siteIDs = unique(sites)
-  nsite = length(siteIDs)
-  nsurveysite<-numeric(nsite)
-  for(i in 1:nsite) {
-    nsurveysite[i] = sum(sites==siteIDs[i])
+  d <- x$d
+  surveys <- x$metadata$surveys
+  # This allows treating fixed date trajectories as sites for plotting purposes
+  if(inherits(x, "fd.trajectories")) {
+    sites <- x$metadata$fdT
+  } else if(inherits(x, "cycles")) {
+    sites <- x$metadata$cycles
+  } else if(inherits(x, "sections")) {
+    sites <- x$metadata$sections
+  } else {
+    sites <- x$metadata$sites
   }
-  if(sum(nsurveysite==1)>0) stop("All sites need to be surveyed at least twice")
-  dmat = as.matrix(d)
-  n = nrow(dmat)
-  nseg = sum(nsurveysite)-nsite
-  segnames = character(nseg)
-  cnt=1
-  for(i in 1:nsite) {
-    if(!is.null(surveys)) {
-      surv = surveys[sites==siteIDs[i]]
-      surv = sort(surv) #Surveys may not be in order
-    }
-    else surv = 1:nsurveysite[i]
-    for(j in 1:(nsurveysite[i]-1)) {
-      segnames[cnt] = paste0(siteIDs[i],"[",surv[j],"-",surv[j+1],"]")
-      cnt = cnt+1
-    }
-  }
-  dsegmat = matrix(0, nseg, nseg)
-  rownames(dsegmat) =segnames
-  colnames(dsegmat) =segnames
-  dinisegmat = dsegmat
-  dfinsegmat = dsegmat
-  dinifinsegmat = dsegmat
-
-  os1 = 1
-  if(verbose) {
-    cat("\nCalculating segment distances...\n")
-    tb = txtProgressBar(1, nsite, style=3)
-  }
-  for(i1 in 1:nsite) {
-    if(verbose) setTxtProgressBar(tb, i1)
-    ind_surv1 = which(sites==siteIDs[i1])
-    #Surveys may not be in order
-    if(!is.null(surveys)) ind_surv1 = ind_surv1[order(surveys[sites==siteIDs[i1]])]
-    for(s1 in 1:(nsurveysite[i1]-1)) {
-      os2 = 1
-      for(i2 in 1:nsite) {
-        ind_surv2 = which(sites==siteIDs[i2])
-        #Surveys may not be in order
-        if(!is.null(surveys)) ind_surv2 = ind_surv2[order(surveys[sites==siteIDs[i2]])]
-        for(s2 in 1:(nsurveysite[i2]-1)) {
-          # os2 = sum(nsurveysite[1:(i2-1)]-1)+s2 #Output index of segment 2
-          #Select submatrix from dmat
-          ind12 = c(ind_surv1[s1],ind_surv1[s1+1],ind_surv2[s2],ind_surv2[s2+1])
-          # print(ind12)
-          # print(c(os1, os2))
-          dmat12 = dmat[c(ind_surv1[s1],ind_surv1[s1+1],ind_surv2[s2],ind_surv2[s2+1]),
-                        c(ind_surv1[s1],ind_surv1[s1+1],ind_surv2[s2],ind_surv2[s2+1])]
-          dsegmat[os1,os2] <- .twoSegmentDistanceC(dmat12, type=distance.type, add)
-          dsegmat[os2,os1] <- dsegmat[os1,os2]
-          dinisegmat[os2,os1] <- dinisegmat[os1,os2]<-dmat[ind_surv1[s1],ind_surv2[s2]]
-          dfinsegmat[os2,os1] <- dfinsegmat[os1,os2]<-dmat[ind_surv1[s1+1],ind_surv2[s2+1]]
-          dinifinsegmat[os1,os2] <- dmat[ind_surv1[s1],ind_surv2[s2+1]]
-          dinifinsegmat[os2,os1] <- dmat[ind_surv1[s1+1],ind_surv2[s2]]
-          os2 = os2+1
-        }
-      }
-      os1 = os1+1
-    }
-  }
-
-  return(list(Dseg = as.dist(dsegmat), Dini=as.dist(dinisegmat), Dfin = as.dist(dfinsegmat),
-              Dinifin=dinifinsegmat))
-}
-
-#' @rdname trajectorymetrics
-#' @export
-trajectoryDistances<-function(d, sites, surveys=NULL, distance.type="DSPD", symmetrization = "mean" , add=TRUE, verbose=FALSE) {
-  distance.type <- match.arg(distance.type, c("DSPD", "SPD", "Hausdorff"))
-  if(length(sites)!=nrow(as.matrix(d))) stop("'sites' needs to be of length equal to the number of rows/columns in d")
-  if(!is.null(surveys)) if(length(sites)!=length(surveys)) stop("'sites' and 'surveys' need to be of the same length")
-  siteIDs = unique(sites)
-  nsite = length(siteIDs)
-  nsurveysite<-numeric(nsite)
-  for(i in 1:nsite) nsurveysite[i] = sum(sites==siteIDs[i])
-  if(sum(nsurveysite==1)>0) stop("All sites need to be surveyed at least twice")
-  n = nrow(as.matrix(d))
-  nseg = sum(nsurveysite)-nsite
   
-  #Init output
-  dtraj = matrix(0, nrow=nsite, ncol = nsite)
-  rownames(dtraj) = siteIDs
-  colnames(dtraj) = siteIDs
-  if(distance.type=="DSPD"){
-    lsd = segmentDistances(d,sites, surveys,distance.type="directed-segment", add, verbose)
-    dsegmat = as.matrix(lsd$Dseg)
-    if(verbose) {
-      cat("\nCalculating trajectory distances...\n")
-      tb = txtProgressBar(1, nsite, style=3)
-    }
-    for(i1 in 1:nsite) {
-      if(verbose) setTxtProgressBar(tb, i1)
-      for(i2 in 1:nsite) {
-        dt12 = 0
-        for(s1 in 1:(nsurveysite[i1]-1)) {
-          dt12ivec = numeric(0)
-          iseg1 = sum(nsurveysite[1:i1]-1)-(nsurveysite[i1]-1)+s1
-          for(s2 in 1:(nsurveysite[i2]-1)) {
-            iseg2 = sum(nsurveysite[1:i2]-1)-(nsurveysite[i2]-1)+s2
-            dt12ivec = c(dt12ivec, dsegmat[iseg1, iseg2])
-          }
-          dt12 = dt12 + min(dt12ivec)
-        }
-        dt12 = dt12/(nsurveysite[i1]-1) #Average of distances between segments of T1 and trajectory T2
-        dt21 = 0 
-        for(s2 in 1:(nsurveysite[i2]-1)) {
-          dt21ivec = numeric(0)
-          iseg2 = sum(nsurveysite[1:i2]-1)-(nsurveysite[i2]-1)+s2
-          for(s1 in 1:(nsurveysite[i1]-1)) {
-            iseg1 = sum(nsurveysite[1:i1]-1)-(nsurveysite[i1]-1)+s1
-            dt21ivec = c(dt21ivec, dsegmat[iseg1, iseg2])
-          }
-          dt21 = dt21 + min(dt21ivec)
-        }
-        dt21 = dt21/(nsurveysite[i2]-1) #Average of distances between segments of T2 and trajectory T1
-        
-        if(!is.null(symmetrization)) {
-          dtraj[i1,i2] = do.call(symmetrization, list(c(dt12,dt21))) #Symmetrization
-          dtraj[i2,i1] = dtraj[i1,i2]
-        } else {
-          dtraj[i1,i2] = dt12
-          dtraj[i2,i1] = dt21
-        }
-      }
-    }
-    
-  } 
-  else if(distance.type=="SPD") {
-    dmat = as.matrix(d)
-    for(i1 in 1:nsite) {
-      ind_surv1 = which(sites==siteIDs[i1])
-      #Surveys may not be in order
-      if(!is.null(surveys)) ind_surv1 = ind_surv1[order(surveys[sites==siteIDs[i1]])]
-      for(i2 in 1:nsite) {
-        ind_surv2 = which(sites==siteIDs[i2])
-        #Surveys may not be in order
-        if(!is.null(surveys)) ind_surv2 = ind_surv2[order(surveys[sites==siteIDs[i2]])]
-        dt12 = 0
-        for(p1 in 1:nsurveysite[i1]) {
-          dt12ivec = numeric(0)
-          ip1 = ind_surv1[p1]
-          for(s2 in 1:(nsurveysite[i2]-1)) {
-            ipi2 = ind_surv2[s2] #initial point
-            ipe2 = ind_surv2[s2+1] #end point
-            dt12ivec = c(dt12ivec, .distanceToSegmentC(dmat[ipi2,ipe2], dmat[ip1, ipi2], dmat[ip1,ipe2], add)[3])
-          }
-          dt12 = dt12 + min(dt12ivec)
-        }
-        dt12 = dt12/nsurveysite[i1] #Average of distances between points of T1 and trajectory T2
-        dt21 = 0 
-        for(p2 in 1:nsurveysite[i2]) {
-          dt21ivec = numeric(0)
-          ip2 = ind_surv2[p2]
-          for(s1 in 1:(nsurveysite[i1]-1)) {
-            ipi1 = ind_surv1[s1] #initial point
-            ipe1 = ind_surv1[s1+1] #end point
-            dt21ivec = c(dt21ivec, .distanceToSegmentC(dmat[ipi1,ipe1], dmat[ip2, ipi1], dmat[ip2,ipe1], add)[3])
-          }
-          dt21 = dt21 + min(dt21ivec)
-        }
-        dt21 = dt21/nsurveysite[i2] #Average of distances between points of T2 and trajectory T1
-        
-        if(!is.null(symmetrization)) {
-          dtraj[i1,i2] = (dt12+dt21)/2 #Symmetrization
-          dtraj[i2,i1] = dtraj[i1,i2]
-        } else {
-          dtraj[i1,i2] = dt12
-          dtraj[i2,i1] = dt21
-        }
-      }
-    }
-  }
-  else if(distance.type=="Hausdorff") {
-    dmat = as.matrix(d)
-    for(i1 in 1:nsite) {
-      ind_surv1 = which(sites==siteIDs[i1])
-      #Surveys may not be in order
-      if(!is.null(surveys)) ind_surv1 = ind_surv1[order(surveys[sites==siteIDs[i1]])]
-      for(i2 in 1:nsite) {
-        ind_surv2 = which(sites==siteIDs[i2])
-        #Surveys may not be in order
-        if(!is.null(surveys)) ind_surv2 = ind_surv2[order(surveys[sites==siteIDs[i2]])]
-        dt12 = 0
-        dt12vec = numeric(0)
-        for(p1 in 1:nsurveysite[i1]) {
-          ip1 = ind_surv1[p1]
-          for(s2 in 1:(nsurveysite[i2]-1)) {
-            ipi2 = ind_surv2[s2] #initial point
-            ipe2 = ind_surv2[s2+1] #end point
-            dt12vec = c(dt12vec, .distanceToSegmentC(dmat[ipi2,ipe2], dmat[ip1, ipi2], dmat[ip1,ipe2], add)[3])
-          }
-        }
-        dt12 = max(dt12vec) #Maximum of distances between points of T1 and segments of T2
-        dt21 = 0 
-        dt21vec = numeric(0)
-        for(p2 in 1:nsurveysite[i2]) {
-          ip2 = ind_surv2[p2]
-          for(s1 in 1:(nsurveysite[i1]-1)) {
-            ipi1 = ind_surv1[s1] #initial point
-            ipe1 = ind_surv1[s1+1] #end point
-            dt21vec = c(dt21vec, .distanceToSegmentC(dmat[ipi1,ipe1], dmat[ip2, ipi1], dmat[ip2,ipe1], add)[3])
-          }
-        }
-        dt21 = max(dt21vec) #Maximum of distances between points of T2 and segments of T1
-        
-        dtraj[i1,i2] = max(dt12, dt21) #maximum of maximums
-        dtraj[i2,i1] = dtraj[i1,i2]
-      }
-    }
-  } 
-  else stop("Wrong distance type")
-  if(!is.null(symmetrization)) return(as.dist(dtraj))
-  return(dtraj)
-}
-
-#' @rdname trajectorymetrics
-#' @param relativeToInitial Flag to indicate that lengths or angles should be calculated with respect to initial survey.
-#' @param all Flag to indicate that lengths or angles are desired for all segments or for all triangles (i.e. all pairs of segments) in the trajectory. If FALSE, length or angles are calculated according to relativeToInitial flag.
-#' @export
-trajectoryLengths<-function(d, sites, surveys=NULL, relativeToInitial = FALSE, all=FALSE, verbose= FALSE) {
-  if(length(sites)!=nrow(as.matrix(d))) stop("'sites' needs to be of length equal to the number of rows/columns in d")
-  if(!is.null(surveys)) if(length(sites)!=length(surveys)) stop("'sites' and 'surveys' need to be of the same length")
-  
-  siteIDs = unique(sites)
-  nsite = length(siteIDs)
+  siteIDs <- unique(sites)
+  nsite <- length(siteIDs)
   surveyIDs<-unique(surveys)
   nsurvey<-length(surveyIDs)
   
@@ -404,22 +144,18 @@ trajectoryLengths<-function(d, sites, surveys=NULL, relativeToInitial = FALSE, a
     nsurveysite[i] = sum(sites==siteIDs[i])
   }
   if(sum(nsurveysite==1)>0) stop("All sites need to be surveyed at least twice")
-  dmat = as.matrix(d)
-  n = nrow(dmat)
+  
+  dmat <- as.matrix(d)
+  n <- nrow(dmat)
 
-  maxnsurveys = max(nsurveysite)
+  maxnsurveys <- max(nsurveysite)
 
   if(!all) {
     lengths = as.data.frame(matrix(NA, nrow=nsite, ncol=maxnsurveys))
     row.names(lengths)<-siteIDs
-    if(relativeToInitial) names(lengths)<-c(paste0("Lt1_t",as.character(2:(maxnsurveys))),"Trajectory")
-    else names(lengths)<-c(paste0("S",as.character(1:(maxnsurveys-1))),"Trajectory")
-    if(verbose) {
-      cat("\nCalculating trajectory lengths...\n")
-      tb = txtProgressBar(1, nsite, style=3)
-    }
+    if(relativeToInitial) names(lengths)<-c(paste0("Lt1_t",as.character(2:(maxnsurveys))),"Path")
+    else names(lengths)<-c(paste0("S",as.character(1:(maxnsurveys-1))),"Path")
     for(i1 in 1:nsite) {
-      if(verbose) setTxtProgressBar(tb, i1)
       ind_surv1 = which(sites==siteIDs[i1])
       #Surveys may not be in order
       if(!is.null(surveys)) ind_surv1 = ind_surv1[order(surveys[sites==siteIDs[i1]])]
@@ -481,60 +217,107 @@ rownames(lengths)<-c(siteIDs)
   return(lengths)
 }
 
-#' @rdname trajectorymetrics
+
+#' @rdname trajectoryMetrics
 #' @param xy Matrix with 2D coordinates in a Cartesian space (typically an ordination of ecosystem states).
+#' @param sites A vector indicating the site corresponding to each ecosystem state.
+#' @param surveys A vector indicating the survey corresponding to each ecosystem state (only necessary when surveys are not in order).
 #' @export
-trajectoryLengths2D<-function(xy,sites,surveys, relativeToInitial=FALSE, all=FALSE, verbose = FALSE) {
-  
-  #order inputs by sites and surveys
-xy_temp<-as.data.frame(xy)
-xy_temp$sites<-sites
-xy_temp$surveys<-surveys
-xy_temp<-xy_temp[order(xy_temp$sites,xy_temp$surveys),]
-xy<-xy_temp[,1:2]
-sites<-c(xy_temp$sites)
-surveys<-c(xy_temp$surveys)
-  
-  siteIDs = unique(sites)
-  surveyIDs<-unique(surveys)
-  nsite<-length(siteIDs)
-  nsurvey<-length(surveyIDs)
-  if(nsite!=nrow(xy)/nsurvey) stop("'sites' needs to be of length equal in xy")
-  if(nrow(xy)!=nsurvey*nsite) stop("All sites need to be surveyed at least twice")
-  #prep all
-  D<-dist(xy)
-  return(trajectoryLengths(D,sites,surveys,relativeToInitial = relativeToInitial, all = all, verbose = verbose))
+trajectoryLengths2D<-function(xy, sites, surveys = NULL, relativeToInitial=FALSE, all=FALSE) {
+  if(length(sites)!=nrow(xy)) stop("'sites' needs to be of length equal to the number of rows in xy")
+  return(trajectoryLengths(defineTrajectories(dist(xy),sites,surveys),
+                           relativeToInitial = relativeToInitial, 
+                           all = all))
 }
 
-#' @rdname trajectorymetrics
-#' @param all A flag to indicate that angles are desired for all triangles (i.e. all pairs of segments) in the trajectory. If FALSE, angles are calculated for consecutive segments only.
-#' @param stats A flag to indicate that circular statistics are desired (mean, standard deviation and mean resultant length, i.e. rho)
+#' @rdname trajectoryMetrics
 #' @export
-trajectoryAngles<-function(d, sites, surveys=NULL, all = FALSE, relativeToInitial = FALSE, stats = TRUE, add=TRUE, verbose= FALSE) {
-  if(length(sites)!=nrow(as.matrix(d))) stop("'sites' needs to be of length equal to the number of rows/columns in d")
-  if(!is.null(surveys)) if(length(sites)!=length(surveys)) stop("'sites' and 'surveys' need to be of the same length")
+trajectorySpeeds<-function(x) {
+  if(!inherits(x, "trajectories")) stop("'x' should be of class `trajectories`")
+  d <- x$d
+  surveys <- x$metadata$surveys
+  times <- x$metadata$times
+  # This allows treating fixed date trajectories as sites for plotting purposes
+  if(inherits(x, "fd.trajectories")) {
+    sites <- x$metadata$fdT
+  } else if(inherits(x, "cycles")) {
+    sites <- x$metadata$cycles
+  } else if(inherits(x, "sections")) {
+    sites <- x$metadata$sections
+  } else {
+    sites <- x$metadata$sites
+  }
   
-  siteIDs = unique(sites)
-  nsite = length(siteIDs)
+  siteIDs <- unique(sites)
+  nsite <- length(siteIDs)
+  surveyIDs<-unique(surveys)
+  nsurvey<-length(surveyIDs)
+  
   nsurveysite<-numeric(nsite)
   for(i in 1:nsite) {
     nsurveysite[i] = sum(sites==siteIDs[i])
   }
   if(sum(nsurveysite==1)>0) stop("All sites need to be surveyed at least twice")
-  dmat = as.matrix(d)
-  n = nrow(dmat)
+  maxnsurveys <- max(nsurveysite)
   
-  maxnsurveys = max(nsurveysite)
-  if(!all) angles = matrix(NA, nrow=nsite, ncol=maxnsurveys+1)
-  else {
-    angles = matrix(NA, nrow=nsite, ncol=choose(maxnsurveys,3)+3)
+  tl <- trajectoryLengths(x, relativeToInitial = FALSE, all = FALSE)
+  speeds <- tl
+  for(i in 1:nsite) {
+    ind_surv <- which(sites==siteIDs[i])
+    #Surveys may not be in order
+    ind_surv <- ind_surv[order(surveys[sites==siteIDs[i]])]
+    for(s in 1:(nsurveysite[i]-1)) {
+      speeds[i,s] <- speeds[i,s]/(times[ind_surv[s+1]] - times[ind_surv[s]])
+    }
+    speeds[i, maxnsurveys] <- speeds[i, maxnsurveys]/(times[ind_surv[length(ind_surv)]] - times[ind_surv[1]])
   }
-  if(verbose) {
-    cat("\nCalculating trajectory angles...\n")
-    tb = txtProgressBar(1, nsite, style=3)
+  return(speeds)
+}
+
+#' @rdname trajectoryMetrics
+#' @param times A numeric vector indicating the time corresponding to each ecosystem state.
+#' @export
+trajectorySpeeds2D<-function(xy, sites, surveys = NULL, times = NULL) {
+  if(length(sites)!=nrow(xy)) stop("'sites' needs to be of length equal to the number of rows in xy")
+  return(trajectorySpeeds(defineTrajectories(dist(xy),sites,surveys,times)))
+}
+
+#' @rdname trajectoryMetrics
+#' @param all A flag to indicate that angles are desired for all triangles (i.e. all pairs of segments) in the trajectory. If FALSE, angles are calculated for consecutive segments only.
+#' @param stats A flag to indicate that circular statistics are desired (mean, standard deviation and mean resultant length, i.e. rho)
+#' @export
+trajectoryAngles<-function(x, all = FALSE, relativeToInitial = FALSE, stats = TRUE, add=TRUE) {
+  if(!inherits(x, "trajectories")) stop("'x' should be of class `trajectories`")
+  
+  d <- x$d
+  surveys <- x$metadata$surveys
+  # This allows treating fixed date trajectories as sites for plotting purposes
+  if(inherits(x, "fd.trajectories")) {
+    sites <- x$metadata$fdT
+  } else if(inherits(x, "cycles")) {
+    sites <- x$metadata$cycles
+  } else if(inherits(x, "sections")) {
+    sites <- x$metadata$sections
+  } else {
+    sites <- x$metadata$sites
+  }
+  
+  siteIDs <- unique(sites)
+  nsite <- length(siteIDs)
+  nsurveysite<-numeric(nsite)
+  for(i in 1:nsite) {
+    nsurveysite[i] = sum(sites==siteIDs[i])
+  }
+  if(sum(nsurveysite==1)>0) stop("All sites need to be surveyed at least twice")
+  dmat <- as.matrix(d)
+  n <- nrow(dmat)
+  
+  maxnsurveys <- max(nsurveysite)
+  if(!all) angles <- matrix(NA, nrow=nsite, ncol=maxnsurveys+1)
+  else {
+    angles <- matrix(NA, nrow=nsite, ncol=choose(maxnsurveys,3)+3)
   }
   for(i1 in 1:nsite) {
-    if(verbose) setTxtProgressBar(tb, i1)
     ind_surv1 = which(sites==siteIDs[i1])
     #Surveys may not be in order
     if(!is.null(surveys)) ind_surv1 = ind_surv1[order(surveys[sites==siteIDs[i1]])]
@@ -590,7 +373,7 @@ trajectoryAngles<-function(d, sites, surveys=NULL, all = FALSE, relativeToInitia
   return(angles)
 }
 
-#' @rdname trajectorymetrics
+#' @rdname trajectoryMetrics
 #' @param betweenSegments Flag to indicate that angles should be calculated between trajectory segments or with respect to X axis.
 #' @export
 trajectoryAngles2D<-function(xy,sites,surveys,relativeToInitial=FALSE, betweenSegments=TRUE) {
@@ -814,178 +597,239 @@ trajectoryAngles2D<-function(xy,sites,surveys,relativeToInitial=FALSE, betweenSe
   return(angles_out)
 }
 
-#' @rdname trajectorymetrics
-#' @param target An integer vector of the ecosystem states to be projected.
-#' @param trajectory An integer vector of the trajectory onto which target states are to be projected.
-#' @param tol Numerical tolerance value to determine that projection of a point lies within the trajectory.
-#' @export
-trajectoryProjection<-function(d, target, trajectory, tol = 0.000001, add=TRUE) {
-  if(length(trajectory)<2) stop("Trajectory needs to include at least two states")
-  dmat = as.matrix(d)
-  npoints = length(target)
-  nsteps = length(trajectory) -1
-  #Distance betwen target points and trajectory points
-  d2ref = dmat[target, trajectory, drop=FALSE]
-  #Distance between trajectory steps
-  dsteps = diag(dmat[trajectory[1:(length(trajectory)-1)], trajectory[2:length(trajectory)]])
-  #Cumulative distance between steps
-  dstepcum = rep(0,nsteps+1)
-  if(nsteps>1) {
-    for(i in 2:nsteps) {
-      dstepcum[i] = dstepcum[i-1]+dsteps[i-1]
-    }
-  }
-  dstepcum[nsteps+1] = sum(dsteps)
-  
-  projH = matrix(NA, nrow=npoints, ncol = nsteps)
-  projA1 = matrix(NA, nrow=npoints, ncol = nsteps)
-  projA2 = matrix(NA, nrow=npoints, ncol = nsteps)
-  whichstep = rep(NA, npoints)
-  dgrad = rep(NA, npoints)
-  posgrad = rep(NA, npoints)
-  
-  for(i in 1:npoints) {
-    for(j in 1:nsteps) {
-      p <-.projectionC(dsteps[j], d2ref[i, j], d2ref[i, j+1], add)
-      if((!is.na(p[3])) & (p[1]>-tol) & (p[2]>-tol)) {
-        projA1[i,j] = p[1]
-        projA2[i,j] = p[2]
-        projH[i,j] = p[3]
-        if(is.na(dgrad[i])) {
-          dgrad[i] = p[3]
-          whichstep[i] = j
-        } else {
-          if(p[3]<dgrad[i]) {
-            dgrad[i] = p[3]
-            whichstep[i] = j
-          }
-        }
-      }
-    }
-    if(!is.na(whichstep[i])) {
-      dg = dstepcum[whichstep[i]]+projA1[i,whichstep[i]]
-      posgrad[i] = dg/sum(dsteps)
-    }
-  }
-  res = data.frame(distanceToTrajectory=dgrad, segment = whichstep, relativePosition = posgrad)
-  row.names(res)<-row.names(d2ref)
-  return(res)
-}
 
-
-#' @rdname trajectorymetrics
-#' @param symmetric A logical flag to indicate a symmetric convergence comparison of trajectories.
+#' @rdname trajectoryMetrics
+#' @param nperm The number of permutations to be used in the directionality test.
 #' @export
-trajectoryConvergence<-function(d, sites, surveys = NULL, symmetric = FALSE, add=TRUE, verbose = FALSE){
-  if(length(sites)!=nrow(as.matrix(d))) stop("'sites' needs to be of length equal to the number of rows/columns in d")
-  if(!is.null(surveys)) if(length(sites)!=length(surveys)) stop("'sites' and 'surveys' need to be of the same length")
-  siteIDs = unique(sites)
-  nsite = length(siteIDs)
+trajectoryDirectionality <- function(x, add=TRUE, nperm = NA) {
+  if(!inherits(x, "trajectories")) stop("'x' should be of class `trajectories`")
+  
+  d <- x$d
+  surveys <- x$metadata$surveys  
+  # This allows treating fixed date trajectories as sites for plotting purposes
+  if(inherits(x, "fd.trajectories")) {
+    sites <- x$metadata$fdT
+  } else if(inherits(x, "cycles")) {
+    sites <- x$metadata$cycles
+  } else if(inherits(x, "sections")) {
+    sites <- x$metadata$sections
+  } else {
+    sites <- x$metadata$sites
+  }
+  
+  siteIDs <- unique(sites)
+  nsite <- length(siteIDs)
   nsurveysite<-numeric(nsite)
-  for(i in 1:nsite) nsurveysite[i] = sum(sites==siteIDs[i])
+  for(i in 1:nsite) nsurveysite[i] <- sum(sites==siteIDs[i])
   if(sum(nsurveysite<3)>0) stop("All sites need to be surveyed at least three times")
-  n = nrow(as.matrix(d))
-
-  #Init output
-  tau = matrix(NA, nrow=nsite, ncol = nsite)
-  rownames(tau) = siteIDs
-  colnames(tau) = siteIDs
-  p.value = tau
-  dmat = as.matrix(d)
-  if(verbose) {
-    cat("\nCalculating trajectory convergence...\n")
-    tb = txtProgressBar(1, nsite, style=3)
-  }
-  for(i1 in 1:(nsite-1)) {
-    if(verbose) setTxtProgressBar(tb, i1)
-    ind_surv1 = which(sites==siteIDs[i1])
-    #Surveys may not be in order
-    if(!is.null(surveys)) ind_surv1 = ind_surv1[order(surveys[sites==siteIDs[i1]])]
-    for(i2 in (i1+1):nsite) {
-      ind_surv2 = which(sites==siteIDs[i2])
+  
+  dir_traj <- function(d, sites, surveys, add = TRUE) {
+    siteIDs <- unique(sites)
+    nsite <- length(siteIDs)
+    dmat <- as.matrix(d)
+    #Init output
+    dir <- rep(NA, nsite)
+    for(s in 1:nsite) {
+      ind_surv <- which(sites==siteIDs[s])
       #Surveys may not be in order
-      if(!is.null(surveys)) ind_surv2 = ind_surv2[order(surveys[sites==siteIDs[i2]])]
-      if(!symmetric) {
-        trajectory = ind_surv2
-        target = ind_surv1
-        trajProj = trajectoryProjection(d,target, trajectory, add=add)
-        dT = trajProj$distanceToTrajectory
-        mk.test = MannKendall(dT)
-        tau[i1,i2] = mk.test$tau
-        p.value[i1,i2] = mk.test$sl
-        trajectory = ind_surv1
-        target = ind_surv2
-        trajProj = trajectoryProjection(d,target, trajectory, add=add)
-        dT = trajProj$distanceToTrajectory
-        mk.test = MannKendall(dT)
-        tau[i2,i1] = mk.test$tau
-        p.value[i2,i1] = mk.test$sl
-      } 
-      else {
-        if(length(ind_surv1)==length(ind_surv2)) {
-          dT = numeric(length(ind_surv1))
-          for(j in 1:length(ind_surv1)) dT[j] = dmat[ind_surv1[j], ind_surv2[j]]
-          mk.test = MannKendall(dT)
-          tau[i1,i2] = mk.test$tau
-          p.value[i1,i2] = mk.test$sl
-          tau[i2,i1] = mk.test$tau
-          p.value[i2,i1] = mk.test$sl
-        } else {
-          warning(paste0("sites ",i1, " and ",i2," do not have the same number of surveys."))
-        }
-      }
-    }
-  }
-  return(list(tau = tau, p.value = p.value))
-}
-
-
-#' @rdname trajectorymetrics
-#' @export
-trajectoryDirectionality<-function(d, sites, surveys = NULL, add=TRUE, verbose = FALSE) {
-  if(length(sites)!=nrow(as.matrix(d))) stop("'sites' needs to be of length equal to the number of rows/columns in d")
-  if(!is.null(surveys)) if(length(sites)!=length(surveys)) stop("'sites' and 'surveys' need to be of the same length")
-  siteIDs = unique(sites)
-  nsite = length(siteIDs)
-  nsurveysite<-numeric(nsite)
-  for(i in 1:nsite) nsurveysite[i] = sum(sites==siteIDs[i])
-  if(sum(nsurveysite<3)>0) stop("All sites need to be surveyed at least three times")
-  
-  dmat = as.matrix(d)
-  #Init output
-  dir = rep(NA, nsite)
-  names(dir) = siteIDs
-  if(verbose) {
-    cat("\nAssessing trajectory directionality...\n")
-    tb = txtProgressBar(1, nsite, style=3)
-  }
-
-  for(i1 in 1:nsite) {
-    if(verbose) setTxtProgressBar(tb, i1)
-    ind_surv1 = which(sites==siteIDs[i1])
-    #Surveys may not be in order
-    if(!is.null(surveys)) ind_surv1 = ind_surv1[order(surveys[sites==siteIDs[i1]])]
-    dsub = dmat[ind_surv1, ind_surv1]
-    n = length(ind_surv1)
-    den = 0
-    num = 0
-    if(n>2) {
-      for(i in 1:(n-2)) {
-        for(j in (i+1):(n-1)) {
-          for(k in (j+1):n) {
-            da = dsub[i,j]
-            db = dsub[j,k]
-            dab = dsub[i,k]
-            theta = .angleConsecutiveC(da,db,dab, add)
-            if(!is.na(theta)) {
-              den = den + (da + db)
-              num = num + (da + db)*((180-theta)/180)
+      if(!is.null(surveys)) ind_surv <- ind_surv[order(surveys[sites==siteIDs[s]])]
+      dsub <- dmat[ind_surv, ind_surv]
+      n <- length(ind_surv)
+      den <- 0
+      num <- 0
+      if(n>2) {
+        for(i in 1:(n-2)) {
+          for(j in (i+1):(n-1)) {
+            for(k in (j+1):n) {
+              da <- dsub[i,j]
+              db <- dsub[j,k]
+              dab <- dsub[i,k]
+              theta <- .angleConsecutiveC(da,db,dab, add)
+              if(!is.na(theta)) {
+                den <- den + (da + db)
+                num <- num + (da + db)*((180-theta)/180)
+              }
             }
           }
         }
+        dir[s] <- num/den
       }
-      dir[i1] = num/den
+    }
+    return(dir)
+  }
+  
+  if(is.na(nperm)) {
+    dir <- dir_traj(d, sites, surveys, add)
+    names(dir) <- siteIDs
+    return(dir)
+  } else {
+    if(!is.numeric(nperm)) stop("'nperm' should be an integer")
+    if(length(nperm)>1) stop("'nperm' should be a single number")
+    if(nperm<1) stop("'nperm' should be larger than 0")
+    nperm <- as.integer(nperm)
+    dir <- dir_traj(d, sites, surveys, add)
+    dirp <- matrix(NA, nperm, nsite)
+    for(p in 1:nperm) {
+      surveysp <- surveys
+      for(i in 1:nsite) surveysp[sites==siteIDs[i]] <- sample(surveysp[sites==siteIDs[i]])
+      dirp[p,] <- dir_traj(d,sites,surveysp, add)
+    }
+    p.value <- (colSums(sweep(dirp,2,dir, "-")>=0)+1)/(nperm+1)
+    return(data.frame(directionality = dir, p.value = p.value, row.names = siteIDs))
+  }
+}
+
+#' @rdname trajectoryMetrics
+#' @export
+trajectoryVariability<-function(x) {
+  if(!inherits(x, "trajectories")) stop("'x' should be of class `trajectories`")
+  
+  if(inherits(x, "fd.trajectories")) {
+    sites <- x$metadata$fdT
+  } else if(inherits(x, "cycles")) {
+    selec <- x$metadata$internal==TRUE
+    x$metadata <- x$metadata[selec,]
+    x$d <- as.dist(as.matrix(x$d)[selec,selec])
+    
+    sites <- x$metadata$cycles
+  } else if(inherits(x, "sections")) {
+    selec <- x$metadata$internal==TRUE
+    x$metadata <- x$metadata[selec,]
+    x$d <- as.dist(as.matrix(x$d)[selec,selec])
+    
+    sites <- x$metadata$sections
+  } else {
+    sites <- x$metadata$sites
+  }
+  d <- x$d
+  surveys <- x$metadata$surveys
+  
+  siteIDs <- unique(sites)
+  nsite <- length(siteIDs)
+  nsurveysite<-numeric(nsite)
+  for(i in 1:nsite) nsurveysite[i] = sum(sites==siteIDs[i])
+  if(sum(nsurveysite<2)>0) stop("All sites need to be surveyed at least twice")
+  
+  dmat <- as.matrix(d)
+  var <- rep(NA, nsite)
+  names(var) <- siteIDs
+  for(i in 1:nsite) {
+    ind_surv = which(sites==siteIDs[i])
+    dsub <- dmat[ind_surv, ind_surv]
+    r <- ncol(dsub)
+    var[i] <- sum(as.vector(as.dist(dsub))^2)/(r^2)
+  }
+  return(var)
+}
+
+#' @rdname trajectoryMetrics
+#' @export
+trajectoryMetrics <- function(x, add = TRUE) {
+  if(!inherits(x, "trajectories")) stop("'x' should be of class `trajectories`")
+  
+  if(inherits(x, "fd.trajectories")) {
+    sites <- x$metadata$fdT
+  } else if(inherits(x, "cycles")) {
+    sites <- x$metadata$cycles
+    warning("Function cycleMetrics() may be more appropriate for cycles")
+  } else if(inherits(x, "sections")) {
+    sites <- x$metadata$sections
+  } else {
+    sites <- x$metadata$sites
+  }
+  siteIDs <- unique(sites)
+  df <-  data.frame(trajectory = siteIDs, site = NA,
+                    n = NA, t_start = NA, t_end = NA, 
+                    length = NA, mean_speed = NA, mean_angle = NA,
+                    directionality = NA, variability = NA)
+  if (inherits(x, "cycles") || inherits(x, "fd.trajectories") || inherits(x, "sections")){
+    for (i in 1:length(siteIDs)){
+      df$site[i] <-unique(x$metadata$sites[sites==siteIDs[i]])
+    }
+  } else {
+    df$site <- NULL
+  }
+  for(i in 1:length(siteIDs)) {
+    df$n[i] <- sum(sites==siteIDs[i])
+  }
+  df$t_start <- tapply(x$metadata$times,sites,min)[siteIDs]
+  df$t_end <- tapply(x$metadata$times,sites,max)[siteIDs]
+  df$length <- trajectoryLengths(x)$Path
+  df$mean_speed <- trajectorySpeeds(x)$Path
+  df$mean_angle <- trajectoryAngles(x, add = add)$mean
+  df$directionality <- trajectoryDirectionality(x, add = add)
+  df$variability <- trajectoryVariability(x)
+  return(df)
+}
+#' @rdname trajectoryMetrics
+#' @param bandwidth Bandwidth of the moving windows (in units of surveys or times, depending on \code{type})
+#' @param type A string, either "surveys" or "times", indicating how windows are defined.
+#' @export
+trajectoryWindowMetrics <- function(x, bandwidth, type = "surveys", add = TRUE) {
+  if(!inherits(x, "trajectories")) stop("'x' should be of class `trajectories`")
+  match.arg(type, c("surveys", "times"))
+  if(!is.numeric(bandwidth)) stop("'bandwidth' should be an numeric value")
+  if(length(bandwidth)>1) stop("'bandwidth' should be a single number")
+  if(type=="surveys") {
+    if(bandwidth<1) stop("'bandwidth' should be at least 1")
+    bandwidth <- as.integer(bandwidth)
+  } else {
+    if(bandwidth<=0) stop("'bandwidth' should be larger than 0")
+  }
+  
+  surveys <- x$metadata$surveys
+  times <- x$metadata$times
+  if(inherits(x, "fd.trajectories")) {
+    sites <- x$metadata$fdT
+  } else if(inherits(x, "cycles")) {
+    sites <- x$metadata$cycles
+  } else if(inherits(x, "sections")) {
+    sites <- x$metadata$sections
+  } else {
+    sites <- x$metadata$sites
+  }
+  
+  siteIDs <- unique(sites)
+  nsite <- length(siteIDs)
+  nsurveysite<-numeric(nsite)
+  for(i in 1:nsite) nsurveysite[i] = sum(sites==siteIDs[i])
+  if(sum(nsurveysite<2)>0) stop("All sites need to be surveyed at least twice")
+  
+  df <-  data.frame(trajectory = sites, site = NA, midpoint = surveys,
+                    t_start = NA,t_end = NA, n = NA, 
+                    length = NA, mean_speed = NA, mean_angle = NA,
+                    directionality = NA, variability = NA)
+  if (inherits(x, "cycles") || inherits(x, "fd.trajectories") || inherits(x, "sections")){
+    for (i in 1:length(sites)){
+      df$site[i] <-unique(x$metadata$sites[sites==sites[i]])
+    }
+  } else {
+    df$site <- NULL
+  }
+  for(i in 1:length(sites)) {
+    surveys_i <- surveys[sites==sites[i]]
+    times_i  <- times[sites==sites[i]]
+    if(type=="surveys") {
+      surveys_window <- surveys_i[abs(surveys_i - surveys[i])<=bandwidth]
+    } else {
+      surveys_window <- surveys_i[abs(times_i - times[i])<=bandwidth]
+    }
+    df$n[i] <- length(surveys_window)
+    df$t_start[i] <- min(times_i[surveys_window])
+    df$t_end[i] <- max(times_i[surveys_window])
+    
+    if(length(surveys_window)>1) {
+      if (inherits(x, "cycles")|inherits(x, "fd.trajectories")|inherits(x, "sections")){
+        x_i <- subsetTrajectories(x = x, subtrajectory_selection = sites[i], survey_selection = surveys_window)
+      }else{
+        x_i <- subsetTrajectories(x = x, site_selection = sites[i], survey_selection = surveys_window)
+      }
+      df$length[i] <- trajectoryLengths(x_i)$Path
+      df$mean_speed[i] <- trajectorySpeeds(x_i)$Path
+      if(length(surveys_window)>2) df$mean_angle[i] <- trajectoryAngles(x_i, add = add)$mean
+      if(length(surveys_window)>2) df$directionality[i] <- trajectoryDirectionality(x_i, add = add)
+      df$variability[i] <- trajectoryVariability(x_i)
     }
   }
-  return(dir)
+  return(df)
 }

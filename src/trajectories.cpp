@@ -53,6 +53,11 @@ bool ismetric(NumericMatrix dmat, double tol=0.0001) {
 // param dref Distance between the two segment endpoints
 // param d1 Distance from the target point to the initial segment endpoint
 // param d2 Distance from the target point to the final segment endpoint
+//
+// returns a vector with:
+//   - The distance of between the START of the reference segment and the projected point 
+//   - The distance of between the END of the reference segment and the projected point 
+//   - The distance height (rejection) of the projection
 // [[Rcpp::export(".projectionC")]]
 NumericVector projection(double dref, double d1, double d2, bool add = true) {
   if(add) { //Correct triangle inequality if needed
@@ -116,6 +121,31 @@ NumericVector distanceToSegment(double dref, double d1, double d2, bool add = tr
   return(p);
 }
 
+// Based on the law of cosines (https://en.wikipedia.org/wiki/Law_of_cosines)
+// For outer triangle we have
+// c1 = dref, b1 = d1, a1 = d2
+// b1^2 = a1^2 + c1^2 - 2*a1*c1*cos(beta1)
+// so that 
+//  -2*a1*cos(beta1) = (b1^2 - a1^2 - c1^2/c1
+//
+// For the inner triangle we have:
+// c2 = dref*(1-p), b2 = ?, a2 = d2 
+// b2^2 = a2^2 + c2^2 - 2*a2*c2*cos(beta2)
+//
+// Since a1 = a2 and beta1 = beta2, we have that
+//  -2*a1*cos(beta1) = -2*a2*cos(beta2)
+// And
+// b2^2 = a2^2 + c2*2 - c2*((b1^2 - a1^2 - c1^2/c1)
+// [[Rcpp::export(".distanceToInterpolatedC")]]
+double distanceToInterpolated(double dref, double d1, double d2, double p, bool add = true) {
+  double c2 = dref*(1.0 - p);
+  double dsq = (d2*d2) + (c2*c2) + c2*((d1*d1) - (d2*d2)  - (dref*dref))/dref;
+  if(add) {
+    dsq = std::max(0.0, dsq);
+  }
+  return(sqrt(dsq));
+}
+
 //
 // Distance between two segments
 //
@@ -173,6 +203,74 @@ double twoSegmentDistance(NumericMatrix dmat12, String type="directed-segment", 
   return(Ds);
 }
 
+
+//
+// Distances between points and arbitrary fuzzy clusters 
+//
+// param dmat distance matrix (objects in rows and columns)
+// param umat membership matrix (objects in rows, clusters in columns)
+// [[Rcpp::export(".distanceToClusters")]]
+NumericMatrix distanceToClusters(NumericMatrix dmat, NumericMatrix umat) {
+  int N = dmat.nrow();
+  int K = umat.ncol();
+  NumericMatrix d2c(N,K);
+  for(int k=0;k<K;k++){
+    double cardinality = sum(umat(_,k));
+    double vg = 0.0;
+    for(int i1=0;i1<N;i1++) {
+      for(int i2=0;i2<N;i2++) {
+        vg += umat(i1,k)*umat(i2,k)*pow(dmat(i1,i2),2.0);
+      }
+    }
+    vg = vg/(2.0*pow(cardinality, 2.0));
+    for(int i1=0;i1<N;i1++) {
+      double sqd2c_i1 = 0.0;
+      for(int i2=0;i2<N;i2++) {
+        sqd2c_i1 += umat(i2,k)*pow(dmat(i1,i2),2.0);
+      }
+      d2c(i1,k) = sqrt(sqd2c_i1/cardinality - vg);
+    }  
+  }
+  return(d2c);
+}
+
+//
+// Distances between arbitrary (fuzzy) clusters 
+//
+// param dmat distance matrix (objects in rows and columns)
+// param umat membership matrix (objects in rows, clusters in columns)
+// [[Rcpp::export(".distanceBetweenClusters")]]
+NumericMatrix distanceBetweenClusters(NumericMatrix dmat, NumericMatrix umat) {
+  int N = dmat.nrow();
+  int K = umat.ncol();
+  NumericVector card(K, 0.0);
+  NumericVector var(K, 0.0);
+  for(int k=0;k<K;k++){
+    card[k] = sum(umat(_,k));
+    double vg = 0.0;
+    for(int i1=0;i1<N;i1++) {
+      for(int i2=0;i2<N;i2++) {
+        vg += umat(i1,k)*umat(i2,k)*pow(dmat(i1,i2),2.0);
+      }
+    }
+    var[k] = vg/(2.0*pow(card[k], 2.0));
+  }
+  NumericMatrix dbc(K,K);
+  for(int k1=0;k1<K;k1++){
+    dbc(k1, k1) = 0.0;
+    for(int k2=0;k2<k1;k2++){
+      double cd = 0.0;
+      for(int i1=0;i1<N;i1++) {
+        for(int i2=0;i2<N;i2++) {
+          cd += umat(i1,k1)*pow(dmat(i1,i2),2.0)*umat(i2,k2);
+        }
+      }
+      dbc(k1,k2) = sqrt((cd/(card[k1]*card[k2])) - var[k1] - var[k2]);
+      dbc(k2,k1) = dbc(k1,k2);
+    }  
+  }
+  return(dbc);
+}
 
 // NOT PRESENTLY USED
 double pt(double dIT, double dXT, double dPX, double dPI) {

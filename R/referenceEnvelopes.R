@@ -1,12 +1,12 @@
 .trajectoryEnvelopeVar<-function(d, sites, surveys, ...){
-  D_T <- trajectoryDistances(d = d, sites = sites, surveys = surveys, ...)
+  D_T <- trajectoryDistances(defineTrajectories(d = d, sites = sites, surveys = surveys), ...)
   r <- ncol(as.matrix(D_T))
-  return(sum(as.vector(D_T)^2)/(r*(r-1)))
+  return(sum(as.vector(as.dist(D_T))^2)/(r^2))
 }
 
 .stateEnvelopeVar <-function(d){
   r <- ncol(as.matrix(d))
-  return(sum(as.vector(d)^2)/(r*(r-1)))
+  return(sum(as.vector(as.dist(d))^2)/(r^2))
 }
 # Generates a bootstrap sample of the envelope variability
 .bootstrapSamples<-function(ind, nboot) {
@@ -43,7 +43,7 @@
 #' 
 #' @return 
 #'  \itemize{
-#'    \item{Functions \code{stateEnvelopeVariability} and \code{trajectoryEnvelopeVariability} are used to assess the}
+#'    \item{Functions \code{stateEnvelopeVariability} and \code{trajectoryEnvelopeVariability} are used to assess the variability of reference envelopes.}
 #'    \item{Functions \code{compareToStateEnvelope} and \code{compareToTrajectoryEnvelope} return data frame with columns identifying the envelope and the Q statistic for the ecological quality with respect to the 
 #' envelope. If \code{nboot.ci != NULL} extra columns are added to indicate the boundaries of a confidence interval for Q, built 
 #' using bootstrap samples of the reference envelope.}
@@ -57,7 +57,7 @@
 #' Robert, A., Schaal, G., Desroy, N. (2023). Ecological Quality Assessment: a general multivariate framework to report 
 #' the quality of ecosystems and their dynamics with respect to reference conditions. Ecosphere.
 #' 
-#' @seealso \code{\link{trajectorymetrics}}, \code{\link{glomel}}
+#' @seealso \code{\link{trajectoryMetrics}}, \code{\link{glomel}}
 #' 
 #' @examples 
 #' data(glomel)
@@ -76,9 +76,16 @@
 #' compareToStateEnvelope(glomel_bc, glomel_env)
 #'
 #' @export
-trajectoryEnvelopeVariability<-function(d, sites, surveys = NULL, nboot.ci = NULL, alpha.ci = 0.05, ...){
+trajectoryEnvelopeVariability<-function(d, sites, surveys = NULL, envelope = NULL, nboot.ci = NULL, alpha.ci = 0.05, ...){
   if(length(sites)!=nrow(as.matrix(d))) stop("'sites' needs to be of length equal to the number of rows/columns in d")
   if(!is.null(surveys)) if(length(sites)!=length(surveys)) stop("'sites' and 'surveys' need to be of the same length")
+  if(!is.null(envelope)) {
+    d <- as.dist(as.matrix(d)[sites %in% envelope, sites %in% envelope])
+    if(!is.null(surveys)) surveys <- surveys[sites %in% envelope]
+    sites <- sites[sites %in% envelope]
+  } else {
+    d <- as.dist(d)
+  }
   if(is.null(nboot.ci)){
     return(.trajectoryEnvelopeVar(d = d, sites = sites, surveys = surveys, ...))
   } else {
@@ -115,7 +122,12 @@ trajectoryEnvelopeVariability<-function(d, sites, surveys = NULL, nboot.ci = NUL
 
 #' @rdname referenceEnvelopes
 #' @export
-stateEnvelopeVariability<-function(d, nboot.ci = NULL, alpha.ci = 0.05){
+stateEnvelopeVariability<-function(d, envelope = NULL, nboot.ci = NULL, alpha.ci = 0.05){
+  if(!is.null(envelope)) {
+    d <- as.dist(as.matrix(d)[envelope, envelope])
+  } else {
+    d <- as.dist(d)
+  }
   if(is.null(nboot.ci)){
     return(.stateEnvelopeVar(d = d))
   } else {
@@ -134,9 +146,10 @@ stateEnvelopeVariability<-function(d, nboot.ci = NULL, alpha.ci = 0.05){
 }
 
 #' @rdname referenceEnvelopes
+#' @param comparison_target String indicating the component to be compared to the reference envelope. Either 'trajectories' (to compare complete trajectories) or 'states' (to compare individual trajectory states).
 #' @export
 compareToTrajectoryEnvelope<-function(d, sites, envelope, surveys = NULL, m = 1.5, 
-                            nboot.ci = NULL, alpha.ci = 0.05,
+                            comparison_target = "trajectories",
                             distances_to_envelope = FALSE,
                             distance_percentiles = FALSE, ...) {
   if(length(sites)!=nrow(as.matrix(d))) stop("'sites' needs to be of length equal to the number of rows/columns in d")
@@ -146,7 +159,7 @@ compareToTrajectoryEnvelope<-function(d, sites, envelope, surveys = NULL, m = 1.
   unique_sites <- unique(sites) 
   non_envelope <- unique_sites[!(unique_sites %in% envelope)]
   if(length(non_envelope)==0) stop("At least one site must be outside the envelope")
-  
+  comparison_target <- match.arg(comparison_target, c("trajectories", "states"))
   nsites <- length(unique_sites)
   if(is.null(surveys)) {
     surveys <- numeric(0)
@@ -154,26 +167,44 @@ compareToTrajectoryEnvelope<-function(d, sites, envelope, surveys = NULL, m = 1.
       surveys<-c(surveys, 1:sum(sites==sites[i]))
     }
   }   
-  D_T <- trajectoryDistances(d = d, sites = sites, surveys = surveys, ...)
-
-  r <- length(envelope)
-  sites_T <- colnames(as.matrix(D_T))
-  sel_T_env <- sites_T %in% envelope
-  D_T_env <- as.dist(as.matrix(D_T)[sel_T_env, sel_T_env])
-  var_env <- sum(as.vector(D_T_env)^2)/(r*(r-1))
-  
-  D2E <- numeric(length(unique_sites))
-  is_env <- unique_sites %in% envelope 
-  for(i in 1:length(unique_sites)) {
-    D_T_i <- as.vector(as.matrix(D_T)[sites_T == unique_sites[i], sel_T_env])
-    D2E[i] <- sum(D_T_i^2)/r - 0.5*var_env
+  if(comparison_target == "trajectories") {
+    
+    D_T <- trajectoryDistances(defineTrajectories(d = d, sites = sites, surveys = surveys), ...)
+    r <- length(envelope)
+    sites_T <- colnames(as.matrix(D_T))
+    sel_T_env <- sites_T %in% envelope
+    D_T_env <- as.dist(as.matrix(D_T)[sel_T_env, sel_T_env])
+    var_env <- sum(as.vector(as.dist(D_T_env))^2)/(r^2)
+    
+    D2E <- numeric(length(unique_sites))
+    is_env <- unique_sites %in% envelope 
+    for(i in 1:length(unique_sites)) {
+      D_T_i <- as.vector(as.matrix(D_T)[sites_T == unique_sites[i], sel_T_env])
+      D2E[i] <- sum(D_T_i^2)/r - var_env
+    }
+    Perc <- numeric(length(unique_sites))
+    for(i in 1:length(unique_sites)) {
+      Perc[i] <- 100*sum(D2E[is_env] <= D2E[i])/sum(is_env)
+    }
+    Q <- pmin(1.0, 2.0/(1.0 + (D2E/var_env)^(1/(m-1)))) 
+    res <- data.frame(Site = unique_sites, Envelope = is_env, SquaredDist = D2E, Percentiles = Perc, Q = Q)
+  } else {
+    var_env <- trajectoryEnvelopeVariability(d, sites, surveys, envelope)
+    d2T <- matrix(NA, nrow = length(sites), ncol = length(envelope))
+    for(j in 1:length(envelope)) {
+      tp <- trajectoryProjection(d, 1:length(sites), which(sites %in% envelope[j]))
+      d2T[,j] <- tp$distanceToTrajectory
+    }
+    # Squared distances to the centroid defined as 
+    D2E <- rowMeans(d2T^2) - var_env
+    is_env <- sites %in% envelope 
+    Perc <- numeric(length(sites))
+    for(i in 1:length(sites)) {
+      Perc[i] <- 100*sum(D2E[is_env] <= D2E[i])/sum(is_env)
+    }
+    Q <- pmin(1.0, 2.0/(1.0 + (D2E/var_env)^(1/(m-1)))) 
+    res <- data.frame(Site = sites, Surveys = surveys, Envelope = is_env, SquaredDist = D2E, Percentiles = Perc, Q = Q)
   }
-  Perc <- numeric(length(unique_sites))
-  for(i in 1:length(unique_sites)) {
-    Perc[i] <- 100*sum(D2E[is_env] <= D2E[i])/sum(is_env)
-  }
-  Q <- pmin(1.0, 2.0/(1.0 + (D2E/var_env)^(1/(m-1)))) 
-  res <- data.frame(Site = unique_sites, Envelope = is_env, SquaredDist = D2E, Percentiles = Perc, Q = Q)
   if(!distances_to_envelope) res$SquaredDist <- NULL
   if(!distance_percentiles) res$Percentiles <- NULL
   return(res)
@@ -199,7 +230,7 @@ compareToStateEnvelope<-function(d, envelope, m = 1.5,
     D2E <- numeric(length(obs))
     for(i in 1:length(obs)) {
       d_i <- as.vector(as.matrix(d)[obs == obs[i], sel_env])
-      D2E[i] <- sum(d_i^2)/length(d_i) - 0.5*var_env
+      D2E[i] <- sum(d_i^2)/length(d_i) - var_env
     }
     Perc <- numeric(length(obs))
     for(i in 1:length(obs)) {
@@ -227,10 +258,10 @@ compareToStateEnvelope<-function(d, envelope, m = 1.5,
     }
     for(i in 1:length(obs)) {
       d_i <- as.vector(as.matrix(d)[i, which(sel_env)])
-      D2E[i] <- sum(d_i^2)/length(d_i) - 0.5*var_env
+      D2E[i] <- sum(d_i^2)/length(d_i) - var_env
       for(j in 1:nboot.ci) {
         d_i_boot <-  as.vector(as.matrix(d)[i, bsm[j,]])
-        D2E_i_boot[j] <- sum(d_i_boot^2)/length(d_i_boot) - 0.5*var_env_boot[j]
+        D2E_i_boot[j] <- sum(d_i_boot^2)/length(d_i_boot) - var_env_boot[j]
       }
       Q_i_boot <- pmin(1.0, 2.0/(1.0 + (D2E_i_boot/var_env_boot)^(1/(m-1)))) 
       Q_i_boot[D2E_i_boot==0] <- 1.0

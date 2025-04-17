@@ -13,12 +13,13 @@ trajectoryEnvelopeVariability(
   d,
   sites,
   surveys = NULL,
+  envelope = NULL,
   nboot.ci = NULL,
   alpha.ci = 0.05,
   ...
 )
 
-stateEnvelopeVariability(d, nboot.ci = NULL, alpha.ci = 0.05)
+stateEnvelopeVariability(d, envelope = NULL, nboot.ci = NULL, alpha.ci = 0.05)
 
 compareToTrajectoryEnvelope(
   d,
@@ -26,8 +27,7 @@ compareToTrajectoryEnvelope(
   envelope,
   surveys = NULL,
   m = 1.5,
-  nboot.ci = NULL,
-  alpha.ci = 0.05,
+  comparison_target = "trajectories",
   distances_to_envelope = FALSE,
   distance_percentiles = FALSE,
   ...
@@ -51,15 +51,17 @@ compareToStateEnvelope(
 
 \item{surveys}{A vector indicating the survey corresponding to each ecosystem state (only necessary when surveys are not in order).}
 
+\item{envelope}{A vector indicating the set of sites that conform the reference envelope (other sites will be compared to the envelope)}
+
 \item{nboot.ci}{Number of bootstrap samples for confidence intervals. If nboot.ci = NULL then confidence intervals are not estimated.}
 
 \item{alpha.ci}{Error in confidence intervals.}
 
 \item{...}{Additional parameters for function \code{\link{trajectoryDistances}}}
 
-\item{envelope}{A vector indicating the set of sites that conform the reference envelope (other sites will be compared to the envelope)}
-
 \item{m}{Fuzziness exponent for quality value assessment}
+
+\item{comparison_target}{String indicating the component to be compared to the reference envelope. Either 'trajectories' (to compare complete trajectories) or 'states' (to compare individual trajectory states).}
 
 \item{distances_to_envelope}{Flag to indicate that distances to envelope should be included in the result}
 
@@ -67,7 +69,7 @@ compareToStateEnvelope(
 }
 \value{
 \itemize{
-\item{Functions \code{stateEnvelopeVariability} and \code{trajectoryEnvelopeVariability} are used to assess the}
+\item{Functions \code{stateEnvelopeVariability} and \code{trajectoryEnvelopeVariability} are used to assess the variability of reference envelopes.}
 \item{Functions \code{compareToStateEnvelope} and \code{compareToTrajectoryEnvelope} return data frame with columns identifying the envelope and the Q statistic for the ecological quality with respect to the
 envelope. If \code{nboot.ci != NULL} extra columns are added to indicate the boundaries of a confidence interval for Q, built
 using bootstrap samples of the reference envelope.}
@@ -105,7 +107,7 @@ Robert, A., Schaal, G., Desroy, N. (2023). Ecological Quality Assessment: a gene
 the quality of ecosystems and their dynamics with respect to reference conditions. Ecosphere.
 }
 \seealso{
-\code{\link{trajectorymetrics}}, \code{\link{glomel}}
+\code{\link{trajectoryMetrics}}, \code{\link{glomel}}
 }
 \author{
 Miquel De \enc{Cáceres}{Caceres}, CREAF
