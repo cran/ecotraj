@@ -1,3 +1,11 @@
+# ecotraj 1.1.0
+* New functions is.metric() and is.synchronous().
+* Update of function trajectoryInternalVariation() (former trajectoryVariability()).
+* New function dynamicVariation().
+* New function variationDecomposition() for synchronous trajectories.
+* New function interpolateTrajectories() for interpolation to given times.
+* Function trajectoryConvergence() modified to allow a global convergence test (type = "multiple").
+
 # ecotraj 1.0.0
 * Trajectory data structures have been introduced.
 * New functions for cyclical trajectory analysis (Djeghri et al, in prep.).

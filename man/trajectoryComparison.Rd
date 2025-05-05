@@ -17,7 +17,7 @@ trajectoryDistances(
   add = TRUE
 )
 
-trajectoryConvergence(x, symmetric = FALSE, add = TRUE)
+trajectoryConvergence(x, type = "pairwise.asymmetric", add = TRUE)
 
 trajectoryShifts(x, add = TRUE)
 }
@@ -30,7 +30,7 @@ trajectoryShifts(x, add = TRUE)
 
 \item{symmetrization}{Function used to obtain a symmetric distance, so that DSPD(T1,T2) = DSPD(T2,T1) (e.g., \code{mean}, \code{max} or \code{min}). If \code{symmetrization = NULL} then the symmetrization is not conducted and the output dissimilarity matrix is not symmetric.}
 
-\item{symmetric}{A logical flag to indicate a symmetric convergence comparison of trajectories.}
+\item{type}{A string indicating the convergence test, either \code{"pairwise.asymmetric"}, \code{"pairwise.symmetric"} or \code{"multiple"} (see details).}
 }
 \value{
 Function \code{trajectoryDistances} returns an object of class \code{\link{dist}} containing the distances between trajectories (if \code{symmetrization = NULL} then the object returned is of class \code{matrix}).
@@ -45,8 +45,8 @@ Function \code{segmentDistances} list with the following elements:
 }
 Function \code{trajectoryConvergence} returns a list with two elements:
 \itemize{
-\item{\code{tau}: A matrix with the statistic (Mann-Kendall's tau) of the convergence/divergence test between trajectories. If \code{symmetric=TRUE} then the matrix is square. Otherwise the statistic of the test of the row trajectory approaching the column trajectory.}
-\item{\code{p.value}: A matrix with the p-value of the convergence/divergence test between trajectories. If \code{symmetric=TRUE} then the matrix is square. Otherwise the p-value indicates the test of the row trajectory approaching the column trajectory.}
+\item{\code{tau}: A single value or a matrix with the statistic (Mann-Kendall's tau) of the convergence/divergence test between trajectories. If \code{type = "pairwise.symmetric"} then the matrix is square and if \code{type = "pairwise.asymmetric"} the statistic of the test of the row trajectory approaching the column trajectory. If \code{type = "multiple"} tau is a single value.}
+\item{\code{p.value}: A single value or a matrix with the p-value of the convergence/divergence test between trajectories. If \code{type = "pairwise.symmetric"} then the matrix of p-values is square and if \code{type = "pairwise.asymmetric"} then the p-value indicates the test of the row trajectory approaching the column trajectory. If \code{type = "multiple"} p-value is a single value.}
 }
 Function \code{trajectoryShifts} returns an object of class \code{\link{data.frame}} describing trajectory shifts (i.e. advances and delays). The columns of the \code{\link{data.frame}} are:
 \itemize{
@@ -64,12 +64,12 @@ Functions to compare pairs of trajectories or trajectory segments.
 \itemize{
 \item{Function \code{segmentDistances} calculates the distance between pairs of trajectory segments.}
 \item{Function \code{trajectoryDistances} calculates the distance between pairs of trajectories.}
-\item{Function \code{trajectoryConvergence} performs the Mann-Kendall trend test on the distances between trajectories (symmetric test) or the distance between points of one trajectory to the other.}
+\item{Function \code{trajectoryConvergence} performs the Mann-Kendall trend test on (1) the distances between trajectories; (2) the distance between points of one trajectory to the other; or (3) the variance of states among trajectories.}
 \item{Function \code{trajectoryShifts} calculates trajectory shifts (i.e. advances and delays) between trajectories assumed to follow a similar path but with different speeds or time lags.}
 }
 }
 \details{
-Ecological Trajectory Analysis (ETA) is a framework to analyze dynamics of ecosystems described as trajectories in a chosen space of multivariate resemblance (De \enc{Cáceres}{Caceres} et al. 2019).
+Ecological Trajectory Analysis (ETA) is a framework to analyze dynamics of ecological entities described as trajectories in a chosen space of multivariate resemblance (De \enc{Cáceres}{Caceres} et al. 2019).
 ETA takes trajectories as objects to be analyzed and compared geometrically.
 
 The input distance matrix \code{d} should ideally be metric. That is, all subsets of distance triplets should fulfill the triangle inequality (see utility function \code{\link{is.metric}}).
@@ -93,13 +93,24 @@ In the case of function \code{trajectoryDistances} the following values are poss
 \item{\code{TSPD}: Time-Sensitive Path Distance (experimental).}
 }
 
+Function \code{trajectoryConvergence} is used to study convergence/divergence between trajectories. There are three possible tests, the first two concerning pairwise comparisons between trajectories.
+\enumerate{
+\item{If \code{type = "pairwise.asymmetric"} then all pairwise comparisons are considered and the test is asymmetric, meaning that we test for trajectory A approaching trajectory B along time.
+This test uses distances of orthogonal projections (i.e. rejections) of states of one trajectory onto the other.}
+\item{If \code{type = "pairwise.symmetric"} then all pairwise comparisons are considered but we test whether
+the two trajectories become closer along surveys. This test requires the same number of surveys for all trajectories and uses the sequence of distances between states of the two trajectories corresponding to the same survey.}
+\item{If \code{type = "multiple"} then the function performs a single test of convergence among all trajectories. This test needs trajectories to be synchronous. In this case,
+the test uses the sequence of variability between states corresponding to the same time.}
+}
+In all cases, a Mann-Kendall test (see \code{\link[Kendall]{MannKendall}}) is used to determine if the sequence of values is monotonously increasing or decreasing.
+
 Function \code{trajectoryShifts} is intended to be used to compare trajectories that are assumed to follow a similar pathway. The function
 evaluates shifts (advances or delays) due to different trajectory speeds or the existence of time lags between them. This is done using calls to \code{\link{trajectoryProjection}}.
 Whenever the projection of a given target state on the reference trajectory does not exist the shift cannot be evaluated (missing values are returned).
 }
 \examples{
-#Description of sites and surveys
-sites <- c("1","1","1","1","2","2","2","2","3","3","3","3")
+#Description of entities (sites) and surveys
+entities <- c("1","1","1","1","2","2","2","2","3","3","3","3")
 surveys <- c(1,2,3,4,1,2,3,4,1,2,3,4)
   
 #Raw data table
@@ -120,7 +131,7 @@ xy[9:10,2] <- xy[5:6,2]
 xy[11:12,2]<-c(1.25,1.0)
   
 #Draw trajectories
-trajectoryPlot(xy, sites, surveys,  
+trajectoryPlot(xy, entities, surveys,  
                traj.colors = c("black","red", "blue"), lwd = 2)
 
 #Distance matrix
@@ -128,7 +139,7 @@ d <- dist(xy)
 d
   
 #Trajectory data
-x <- defineTrajectories(d, sites, surveys)
+x <- defineTrajectories(d, entities, surveys)
 
 #Distances between trajectory segments
 segmentDistances(x, distance.type = "Hausdorff")
@@ -142,8 +153,8 @@ trajectoryDistances(x, distance.type = "DSPD")
 trajectoryConvergence(x)
 
 #### Example of trajectory shifts
-#Description of sites and surveys
-sites2 <- c("1","1","1","1","2","2","2","2","3","3","3","3")
+#Description of entities (sites) and surveys
+entities2 <- c("1","1","1","1","2","2","2","2","3","3","3","3")
 times2 <- c(1,2,3,4,1,2,3,4,1,2,3,4)
   
 #Raw data table
@@ -157,11 +168,11 @@ xy2[9:12,1] <- 0.5
 xy2[9:12,2] <- xy2[1:4,2]*1.25  # 1.25 times faster than site "1"
   
 #Draw trajectories
-trajectoryPlot(xy2, sites2,  
+trajectoryPlot(xy2, entities2,  
                traj.colors = c("black","red", "blue"), lwd = 2)
 
 #Trajectory data
-x2 <- defineTrajectories(dist(xy2), sites = sites2, times = times2)
+x2 <- defineTrajectories(dist(xy2), entities2, times = times2)
 
 #Check that the third trajectory is faster
 trajectorySpeeds(x2)
@@ -176,7 +187,7 @@ De \enc{Cáceres}{Caceres} M, Coll L, Legendre P, Allen RB, Wiser SK, Fortin MJ,
 Trajectory analysis in community ecology. Ecological Monographs 89, e01350.
 }
 \seealso{
-\code{\link{trajectoryMetrics}}, \code{\link{trajectoryPlot}}, \code{\link{transformTrajectories}}, \code{\link{trajectoryProjection}}
+\code{\link{trajectoryMetrics}}, \code{\link{trajectoryPlot}}, \code{\link{transformTrajectories}}, \code{\link{trajectoryProjection}}, \code{\link[Kendall]{MannKendall}}
 }
 \author{
 Miquel De \enc{Cáceres}{Caceres}, CREAF

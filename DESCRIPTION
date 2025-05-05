@@ -1,16 +1,15 @@
 Package: ecotraj
 Type: Package
 Title: Ecological Trajectory Analysis
-Version: 1.0.0
-Date: 2025-04-16
+Version: 1.1.0
+Date: 2025-05-05
 Authors@R: c(
 	person('Miquel', 'De Cáceres', role=c('aut','cre'),
 	email='miquelcaceres@gmail.com', comment = c(ORCID = "0000-0001-7132-2080")),
 	person('Nicolas', 'Djeghri', role = 'aut', comment = c(ORCID = "0000-0001-5740-3386")),
 	person('Anthony', 'Sturbois', role = 'aut', comment = c(ORCID = "0000-0002-9219-4468")),
 	person('Javier', 'De la Casa', role = 'ctb'))
-Description: Assists ecologists in the analysis of temporal changes of 
-    ecosystems, defined as trajectories on a chosen multivariate space, by providing a set of 
+Description: Analysis of temporal changes (i.e. dynamics) of ecological entities, defined as trajectories on a chosen multivariate space, by providing a set of 
     trajectory metrics and visual representations [De Caceres et al. (2019) <doi:10.1002/ecm.1350>; 
     and Sturbois et al. (2021) <doi:10.1016/j.ecolmodel.2020.109400>]. Includes functions
     to estimate metrics for individual trajectories (length, directionality, angles, ...) as well as
@@ -32,11 +31,12 @@ Suggests: ape, vegclust, knitr, rmarkdown, RColorBrewer, smacof, vegan,
 LazyData: true
 BugReports: https://github.com/emf-creaf/ecotraj/issues
 Config/testthat/edition: 3
-Packaged: 2025-04-16 17:09:18 UTC; miquel
-Author: Miquel De Cáceres [aut, cre] (<https://orcid.org/0000-0001-7132-2080>),
-  Nicolas Djeghri [aut] (<https://orcid.org/0000-0001-5740-3386>),
-  Anthony Sturbois [aut] (<https://orcid.org/0000-0002-9219-4468>),
+Packaged: 2025-05-05 12:54:38 UTC; miquel
+Author: Miquel De Cáceres [aut, cre] (ORCID:
+    <https://orcid.org/0000-0001-7132-2080>),
+  Nicolas Djeghri [aut] (ORCID: <https://orcid.org/0000-0001-5740-3386>),
+  Anthony Sturbois [aut] (ORCID: <https://orcid.org/0000-0002-9219-4468>),
   Javier De la Casa [ctb]
 Maintainer: Miquel De Cáceres <miquelcaceres@gmail.com>
 Repository: CRAN
-Date/Publication: 2025-04-17 06:50:17 UTC
+Date/Publication: 2025-05-05 13:30:02 UTC

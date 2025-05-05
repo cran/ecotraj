@@ -1,15 +1,29 @@
+.gowerCentered<-function(D) {
+  Dmat <- as.matrix(D)
+  Amat <- (-0.5)*(Dmat^2)
+  n <- nrow(Dmat)
+  #Identity matrix  
+  I <- diag(n)
+  #Centering matrix
+  One <- matrix(1, n, n)
+  Cmat <- I - (One/n)
+  #Gower matrix
+  G = Cmat %*% Amat %*% Cmat
+  return(G)
+}
 #' Transform trajectories
 #' 
 #' The following functions are provided to transform trajectories:
 #' \itemize{
 #' \item{Function \code{smoothTrajectories} performs multivariate smoothing on trajectory data using a Gaussian kernel.}
 #' \item{Function \code{centerTrajectories} shifts all trajectories to the center of the multivariate space and returns a modified distance matrix.}
+#' \item{Function \code{interpolateTrajectories} relocates trajectory ecological states to those corresponding to input times, via interpolation.}
 #' }
 #'  
 #' 
 #' @encoding UTF-8
 #' @name transformTrajectories
-#' @aliases centerTrajectories smoothTrajectories
+#' @aliases centerTrajectories smoothTrajectories interpolateTrajectories
 #' 
 #' @param x An object of class \code{\link{trajectories}}.
 #' 
@@ -18,7 +32,8 @@
 #' Function \code{centerTrajectories} performs centering of trajectories using matrix algebra as explained in Anderson (2017).
 #'
 #' @return 
-#' A modified object of class \code{\link{trajectories}}, where distance matrix has been transformed.
+#' A modified object of class \code{\link{trajectories}}, where distance matrix has been transformed. When calling \code{interpolateTrajectories}, also the
+#' number of observations and metadata is likely to be affected.
 #' 
 #' @author 
 #' Miquel De \enc{Cáceres}{Caceres}, CREAF
@@ -60,9 +75,8 @@ smoothTrajectories<-function(x, survey_times = NULL, kernel_scale = 1, fixed_end
   for(i in 1:nsite) nsurveysite[i] <- sum(sites==siteIDs[i])
   if(sum(nsurveysite<3)>0) stop("All sites need to be surveyed at least three times")
   
-  dmat <- as.matrix(d)
-  
-  umat_smooth <- matrix(0, length(sites), length(sites))
+  n <- length(sites)
+  umat_smooth <- matrix(0, n, n)
   for(i1 in 1:length(sites)) {
     if(!is.null(surveys)) {
       surveys_i1 <- surveys
@@ -96,8 +110,9 @@ smoothTrajectories<-function(x, survey_times = NULL, kernel_scale = 1, fixed_end
       umat_smooth[i1, ] <- umat_smooth[i1, ]/sum(umat_smooth[i1, ])
     }
   }
+  
   # Replace distance matrix with distances between clusters
-  x$d <- .distanceBetweenClusters(dmat, umat_smooth)
+  x$d <- .distanceBetweenClusters(as.matrix(d), umat_smooth)
   return(x)
 }
 
@@ -133,17 +148,11 @@ centerTrajectories<-function(x, exclude = integer(0)) {
   }
   
   Dmat <-as.matrix(d)
+  n <- nrow(Dmat)
+  I <- diag(n)
   
   # Anderson (2017). Permutational Multivariate Analysis of Variance (PERMANOVA). Wiley StatsRef: Statistics Reference Online. 1-15. Article ID: stat07841.
-  Amat <- (-0.5)*(Dmat^2)
-  n <- nrow(Dmat)
-  #Identity matrix  
-  I <- diag(n)
-  #Centering matrix
-  One <- matrix(1, n, n)
-  Cmat <- I - (One/n)
-  #Gower matrix
-  G = Cmat %*% Amat %*% Cmat
+  G <- .gowerCentered(d)
   #model matrix
   df <- data.frame(a = factor(sites))
   M <- model.matrix(~a,df, contrasts = list(a = "contr.helmert"))
@@ -175,4 +184,147 @@ centerTrajectories<-function(x, exclude = integer(0)) {
   # Replace distance matrix by dcent
   x$d <- as.dist(dcent)
   return(x)
+}
+
+
+#' @rdname transformTrajectories
+#' @param times A numeric vector indicating new observation times for trajectories. Values should be comprised between time limits of the original trajectories.
+#' @export
+interpolateTrajectories<-function(x, times) {
+  if(!inherits(x, "trajectories")) stop("'x' should be of class `trajectories`")
+  if(!inherits(times, "numeric") && !inherits(times, "integer")) stop("'times' should be a numeric vector")
+  if(length(unique(times)) < length(times)) stop("Time values must be unique")
+  if(length(times)<0) stop("'times' should be of length > 1")
+  times <- sort(as.numeric(times))
+    
+  dmat <- as.matrix(x$d)
+  if(inherits(x, "fd.trajectories")) {
+    sites <- x$metadata$fdT
+  } else if(inherits(x, "cycles")) {
+    sites <- x$metadata$cycles
+  } else if(inherits(x, "sections")) {
+    sites <- x$metadata$sections
+  } else {
+    sites <- x$metadata$sites
+  }  
+  times_old <- x$metadata$times
+  
+  
+  siteIDs <- unique(sites)
+  nsite <- length(siteIDs)
+  nsurveysite<-numeric(nsite)
+  for(i in 1:nsite) nsurveysite[i] <- sum(sites==siteIDs[i])
+  if(sum(nsurveysite<2)>0) stop("All sites need to be surveyed at least twice")
+  t_start <- tapply(x$metadata$times,sites,min)[siteIDs]
+  t_end <- tapply(x$metadata$times,sites,max)[siteIDs]
+  if(any(t_start > times[1])) stop("Initial time beyond trajectory common temporal range")
+  if(any(t_end < times[length(times)])) stop("Final time beyond trajectory common temporal range")
+  
+  times_final <- times
+  times <- sort(unique(c(times, times_old)))
+  # cat(paste0("Times: ", paste0(times, collapse=","),"\n"))
+  
+  n_new <- nsite*length(times)
+  sites_new <- as.character(gl(nsite, length(times), labels = siteIDs))
+  times_new <- rep(times, nsite)
+  is_old <- rep(FALSE, n_new)
+  to_remove <- rep(FALSE, n_new)
+  for(i in 1:n_new) {
+    site_i <- sites_new[i]
+    time_i <- times_new[i]
+    # cat(paste0(i, " time ", time_i, " site ", site_i, " min time old ", min(times_old[sites==site_i]), " max time old ", max(times_old[sites==site_i]), "\n"))
+    # Check if this time is included in original duration of the trajectory (otherwise exclude from trajectory building)
+    if((time_i >= min(times_old[sites==site_i])) && (time_i <= max(times_old[sites==site_i]))) {
+      # Check if this time was already present in original definition
+      if(time_i %in% times_old[sites==site_i]) is_old[i] <- TRUE
+    } else {
+      to_remove[i] <- TRUE
+    }
+  }
+  # cat(paste0("To remove: ", sum(to_remove),"\n"))
+  n_new <- sum(!to_remove)
+  sites_new <- sites_new[!to_remove]
+  times_new <- times_new[!to_remove]
+  is_old <- is_old[!to_remove]
+  
+  # cat(paste0("Old points: ", paste0(which(is_old), collapse = ","), "\n"))
+  # cat(paste0("Old times: ", paste0(times_new[is_old], collapse = ","), "\n"))
+  
+  dmat_new <- matrix(NA, nrow = n_new, ncol = n_new)
+  rownames(dmat_new) <- 1:n_new
+  colnames(dmat_new) <- 1:n_new
+  # Diagonal
+  for(i in 1:n_new) dmat_new[i,i] <- 0
+  # Distances between existing points
+  for(i in which(is_old)) {
+    site_i <- sites_new[i]
+    time_i <- times_new[i]
+    r_i <- which((times_old ==time_i) & (sites == site_i))
+    for(j in which(is_old)) {
+      site_j <- sites_new[j]
+      time_j <- times_new[j]
+      c_j <- which((times_old ==time_j) & (sites == site_j))
+      dmat_new[i,j] <- dmat[r_i, c_j]
+    }
+  }
+  # Distances between new points and existing ones
+  for(i in which(!is_old)) {
+    site_i <- sites_new[i]
+    time_i <- times_new[i]
+    bef_i <- max(which(times_old[sites == site_i] < time_i))
+    aft_i <- min(which(times_old[sites == site_i] > time_i))
+    time_bef_i <- times_old[sites == site_i][bef_i]
+    time_aft_i <- times_old[sites == site_i][aft_i]
+    p <- (time_i - time_bef_i)/(time_aft_i - time_bef_i)
+    r_bef_i <- which((times_old ==time_bef_i) & (sites == site_i))
+    r_aft_i <- which((times_old ==time_aft_i) & (sites == site_i))
+    dref <- dmat[r_bef_i, r_aft_i]
+    for(j in which(is_old)) {
+      site_j <- sites_new[j]
+      time_j <- times_new[j]
+      c_j <- which((times_old ==time_j) & (sites == site_j))
+      d1 <- dmat[r_bef_i, c_j]
+      d2 <- dmat[r_aft_i, c_j]
+      d_int <- .distanceToInterpolatedC(dref, d1, d2, p)
+      # print(c(time_i, time_j, bef_i, aft_i, time_bef_i, time_aft_i, r_bef_i, r_aft_i, i, j, dref, d1, d2, p, d_int))
+      dmat_new[i,j] <- d_int
+      dmat_new[j,i] <- d_int
+    }
+  }
+  
+  # Distances between new points
+  for(i in which(!is_old)) {
+    site_i <- sites_new[i]
+    time_i <- times_new[i]
+    bef_i <- max(which(times_old[sites == site_i] < time_i))
+    aft_i <- min(which(times_old[sites == site_i] > time_i))
+    time_bef_i <- times_old[sites == site_i][bef_i]
+    time_aft_i <- times_old[sites == site_i][aft_i]
+    p <- (time_i - time_bef_i)/(time_aft_i - time_bef_i)
+    r_bef_i <- which((times_old ==time_bef_i) & (sites == site_i))
+    r_aft_i <- which((times_old ==time_aft_i) & (sites == site_i))
+    dref <- dmat[r_bef_i, r_aft_i]
+    r_bef_new_i <- which((times_new ==time_bef_i) & (sites_new == site_i))
+    r_aft_new_i <- which((times_new ==time_aft_i) & (sites_new == site_i))
+    other_new <- which(!is_old)
+    other_new <- other_new[other_new>i]
+    for(j in other_new) {
+      site_j <- sites_new[j]
+      time_j <- times_new[j]
+      c_j_new <- which((times_new ==time_j) & (sites_new == site_j))
+      d1 <- dmat_new[r_bef_new_i, c_j_new]
+      d2 <- dmat_new[r_aft_new_i, c_j_new]
+      d_int <- .distanceToInterpolatedC(dref, d1, d2, p)
+      # print(c(time_i, time_j, bef_i, aft_i, r_bef_i, r_aft_i, i, j, dref, d1, d2, p, d_int))
+      dmat_new[i,j] <- d_int
+      dmat_new[j,i] <- d_int
+    }
+  }
+  # print(as.dist(dmat_new))
+  sel <- times_new %in% times_final
+  dmat_new <- dmat_new[sel,sel]
+  rownames(dmat_new) <- NULL
+  colnames(dmat_new) <- NULL
+  # print(dmat_new)
+  return(defineTrajectories(as.dist(dmat_new), sites = sites_new[sel], times = times_new[sel]))
 }

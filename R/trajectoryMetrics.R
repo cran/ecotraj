@@ -9,7 +9,7 @@
 #' \item{Function \code{trajectoryAngles} calculates the angle between consecutive pairs of directed segments or between segments of ordered triplets of points.}
 #' \item{Function \code{trajectoryAngles2D} calculates the angle between consecutive pairs of directed segments or between segments of ordered triplets of points.}
 #' \item{Function \code{trajectoryDirectionality} calculates (for each trajectory) a statistic that measures directionality of the whole trajectory.}
-#' \item{Function \code{trajectoryVariability} calculates (for each trajectory) a statistic that measures the variability between the states included in the trajectory.}
+#' \item{Function \code{trajectoryInternalVariation} calculates (for each trajectory) a statistic that measures the variability between the states included in the trajectory.}
 #' \item{Function \code{trajectoryMetrics} evaluates several trajectory metrics at once.}
 #' \item{Function \code{trajectoryWindowMetrics} evaluates several trajectory metrics on subtrajectories defined using moving windows.}
 #' }
@@ -24,7 +24,7 @@
 #' @param add Flag to indicate that constant values should be added (local transformation) to correct triplets of distance values that do not fulfill the triangle inequality.
 #' 
 #' @details 
-#' Ecological Trajectory Analysis (ETA) is a framework to analyze dynamics of ecosystems described as trajectories in a chosen space of multivariate resemblance (De \enc{Cáceres}{Caceres} et al. 2019).
+#' Ecological Trajectory Analysis (ETA) is a framework to analyze dynamics of ecological entities described as trajectories in a chosen space of multivariate resemblance (De \enc{Cáceres}{Caceres} et al. 2019).
 #' ETA takes trajectories as objects to be analyzed and compared geometrically. 
 #' 
 #' The input distance matrix \code{d} should ideally be metric. That is, all subsets of distance triplets should fulfill the triangle inequality (see utility function \code{\link{is.metric}}). 
@@ -60,7 +60,8 @@
 #' Function \code{trajectoryDirectionality} returns a vector with directionality values (one per trajectory). If \code{nperm} is not missing, the function returns a data frame
 #' with a column of directional values and a column of p-values corresponding to the result of the permutational test.
 #' 
-#' Function \code{trajectoryVariability} returns a vector with total variability values (one per trajectory).
+#' Function \code{trajectoryInternalVariation} returns data.frame with as many rows as trajectories, and different columns: (1) the contribution of each individual state to the internal sum of squares (in absolute or relative terms); (2) the overall sum of squares of internal variability;
+#' (3) an unbiased estimator of overall internal variance.
 #' 
 #' Function \code{trajectoryMetrics} returns a data frame where rows are trajectories and columns are different trajectory metrics.
 #' 
@@ -77,8 +78,8 @@
 #' @seealso \code{\link{trajectoryComparison}}, \code{\link{trajectoryPlot}}, \code{\link{transformTrajectories}}, \code{\link{cycleMetrics}}
 #' 
 #' @examples 
-#' #Description of sites and surveys
-#' sites <- c("1","1","1","2","2","2")
+#' #Description of entities (sites) and surveys
+#' entities <- c("1","1","1","2","2","2")
 #' surveys <- c(1, 2, 3, 1, 2, 3)
 #' times <- c(0, 1.5, 3, 0, 1.5, 3)
 #'   
@@ -91,7 +92,7 @@
 #' xy[6,1]<-1
 #'   
 #' #Draw trajectories
-#' trajectoryPlot(xy, sites, surveys,  
+#' trajectoryPlot(xy, entities, surveys,  
 #'                traj.colors = c("black","red"), lwd = 2)
 #' 
 #' #Distance matrix
@@ -99,20 +100,20 @@
 #' d
 #'   
 #' #Trajectory data
-#' x <- defineTrajectories(d, sites, surveys, times)
+#' x <- defineTrajectories(d, entities, surveys, times)
 #' 
 #' #Trajectory lengths
 #' trajectoryLengths(x)
-#' trajectoryLengths2D(xy, sites, surveys)
+#' trajectoryLengths2D(xy, entities, surveys)
 #' 
 #' #Trajectory speeds
 #' trajectorySpeeds(x)
-#' trajectorySpeeds2D(xy, sites, surveys, times)
+#' trajectorySpeeds2D(xy, entities, surveys, times)
 #'
 #' #Trajectory angles
 #' trajectoryAngles(x)
-#' trajectoryAngles2D(xy, sites, surveys, betweenSegments = TRUE)
-#' trajectoryAngles2D(xy, sites, surveys, betweenSegments = FALSE)
+#' trajectoryAngles2D(xy, entities, surveys, betweenSegments = TRUE)
+#' trajectoryAngles2D(xy, entities, surveys, betweenSegments = FALSE)
 #' 
 #' #Several metrics at once
 #' trajectoryMetrics(x)  
@@ -219,9 +220,9 @@ rownames(lengths)<-c(siteIDs)
 
 
 #' @rdname trajectoryMetrics
-#' @param xy Matrix with 2D coordinates in a Cartesian space (typically an ordination of ecosystem states).
-#' @param sites A vector indicating the site corresponding to each ecosystem state.
-#' @param surveys A vector indicating the survey corresponding to each ecosystem state (only necessary when surveys are not in order).
+#' @param xy Matrix with 2D coordinates in a Cartesian space (typically an ordination of ecological states).
+#' @param sites A vector indicating the site corresponding to each ecological state.
+#' @param surveys A vector indicating the survey corresponding to each ecological state (only necessary when surveys are not in order).
 #' @export
 trajectoryLengths2D<-function(xy, sites, surveys = NULL, relativeToInitial=FALSE, all=FALSE) {
   if(length(sites)!=nrow(xy)) stop("'sites' needs to be of length equal to the number of rows in xy")
@@ -680,8 +681,9 @@ trajectoryDirectionality <- function(x, add=TRUE, nperm = NA) {
 }
 
 #' @rdname trajectoryMetrics
+#' @param relativeContributions A logical flag to indicate that contributions of individual observations to temporal variability should be expressed in relative terms, i.e. as the ratio of the sum of squares of the observation divided by the overall sum of squares (otherwise, absolute sum of squares are returned).
 #' @export
-trajectoryVariability<-function(x) {
+trajectoryInternalVariation<-function(x, relativeContributions = FALSE) {
   if(!inherits(x, "trajectories")) stop("'x' should be of class `trajectories`")
   
   if(inherits(x, "fd.trajectories")) {
@@ -710,16 +712,25 @@ trajectoryVariability<-function(x) {
   for(i in 1:nsite) nsurveysite[i] = sum(sites==siteIDs[i])
   if(sum(nsurveysite<2)>0) stop("All sites need to be surveyed at least twice")
   
+  out <- matrix(NA, nrow = nsite, ncol = max(nsurveysite)+2)
   dmat <- as.matrix(d)
-  var <- rep(NA, nsite)
-  names(var) <- siteIDs
   for(i in 1:nsite) {
     ind_surv = which(sites==siteIDs[i])
+    #Surveys may not be in order
+    if(!is.null(surveys)) ind_surv <- ind_surv[order(surveys[sites==siteIDs[i]])]
     dsub <- dmat[ind_surv, ind_surv]
     r <- ncol(dsub)
-    var[i] <- sum(as.vector(as.dist(dsub))^2)/(r^2)
+    G <- .gowerCentered(dsub)
+    out[i, 1:r] <- diag(G)
+    out[i, max(nsurveysite)+1] <- sum(diag(G))
+    out[i, max(nsurveysite)+2] <- out[i, max(nsurveysite)+1]/(r-1)
+    if(relativeContributions) out[i, 1:r] <- diag(G)/sum(diag(G))
   }
-  return(var)
+  out <- as.data.frame(out)
+  if(relativeContributions) names(out) <- c(paste0("rc_", 1:max(nsurveysite)), "internal_ss", "internal_variance")
+  else names(out) <- c(paste0("ss_", 1:max(nsurveysite)), "internal_ss", "internal_variance")
+  row.names(out) <- siteIDs
+  return(out)
 }
 
 #' @rdname trajectoryMetrics
@@ -739,9 +750,9 @@ trajectoryMetrics <- function(x, add = TRUE) {
   }
   siteIDs <- unique(sites)
   df <-  data.frame(trajectory = siteIDs, site = NA,
-                    n = NA, t_start = NA, t_end = NA, 
+                    n = NA, t_start = NA, t_end = NA, duration = NA,
                     length = NA, mean_speed = NA, mean_angle = NA,
-                    directionality = NA, variability = NA)
+                    directionality = NA, internal_ss = NA, internal_variance = NA)
   if (inherits(x, "cycles") || inherits(x, "fd.trajectories") || inherits(x, "sections")){
     for (i in 1:length(siteIDs)){
       df$site[i] <-unique(x$metadata$sites[sites==siteIDs[i]])
@@ -754,11 +765,14 @@ trajectoryMetrics <- function(x, add = TRUE) {
   }
   df$t_start <- tapply(x$metadata$times,sites,min)[siteIDs]
   df$t_end <- tapply(x$metadata$times,sites,max)[siteIDs]
+  df$duration <- df$t_end - df$t_start
   df$length <- trajectoryLengths(x)$Path
   df$mean_speed <- trajectorySpeeds(x)$Path
   df$mean_angle <- trajectoryAngles(x, add = add)$mean
   df$directionality <- trajectoryDirectionality(x, add = add)
-  df$variability <- trajectoryVariability(x)
+  var <- trajectoryInternalVariation(x)
+  df$internal_ss <- var[,"internal_ss"]
+  df$internal_variance <- var[,"internal_variance"]
   return(df)
 }
 #' @rdname trajectoryMetrics
@@ -798,7 +812,7 @@ trajectoryWindowMetrics <- function(x, bandwidth, type = "surveys", add = TRUE) 
   df <-  data.frame(trajectory = sites, site = NA, midpoint = surveys,
                     t_start = NA,t_end = NA, n = NA, 
                     length = NA, mean_speed = NA, mean_angle = NA,
-                    directionality = NA, variability = NA)
+                    directionality = NA, internal_ss = NA, internal_variance = NA)
   if (inherits(x, "cycles") || inherits(x, "fd.trajectories") || inherits(x, "sections")){
     for (i in 1:length(sites)){
       df$site[i] <-unique(x$metadata$sites[sites==sites[i]])
@@ -828,7 +842,9 @@ trajectoryWindowMetrics <- function(x, bandwidth, type = "surveys", add = TRUE) 
       df$mean_speed[i] <- trajectorySpeeds(x_i)$Path
       if(length(surveys_window)>2) df$mean_angle[i] <- trajectoryAngles(x_i, add = add)$mean
       if(length(surveys_window)>2) df$directionality[i] <- trajectoryDirectionality(x_i, add = add)
-      df$variability[i] <- trajectoryVariability(x_i)
+      var_i <- trajectoryInternalVariation(x_i)
+      df$internal_ss[i] <- var_i[,"internal_ss"]
+      df$internal_variance[i] <- var_i[,"internal_variance"]
     }
   }
   return(df)

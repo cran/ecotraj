@@ -24,7 +24,7 @@
 #' "external" ecological states need a specific treatment in some calculations and for some operations within ETA, namely:
 #' \itemize{
 #'  \item{Centering, where external ecological states must be excluded from computation but included nonetheless in the procedure. This is automatically handled by function \code{\link{centerTrajectories}}.}
-#'  \item{Trajectory variability, where only internal ecological states must be taken in account. This is handled automatically by function \code{\link{trajectoryVariability}}.}
+#'  \item{Trajectory variability, where only internal ecological states must be taken in account. This is handled automatically by function \code{\link{trajectoryInternalVariation}}.}
 #' }
 #' Special care must also be taken when processing the data through principal coordinate analysis as external ecological states are effectively duplicated or interpolated in the output of \code{extractTrajectorySections}.
 #' 
@@ -231,8 +231,8 @@ extractTrajectorySections <- function(x,
 
 
 #' @rdname trajectorySections
-#' @param d A symmetric \code{\link{matrix}} or an object of class \code{\link{dist}} containing the distance values between pairs of ecosystem states.
-#' @param ToInterpolate a matrix with three columns: 1) the positions of ecosystem states A in d; 2) the positions of ecosystem states B in d; 3) an interpolation coefficient (i.e. at what proportion of directed segment AB the interpolate ecosystem state X needs to be).
+#' @param d A symmetric \code{\link{matrix}} or an object of class \code{\link{dist}} containing the distance values between pairs of ecological states.
+#' @param ToInterpolate a matrix with three columns: 1) the positions of ecological states A in d; 2) the positions of ecological states B in d; 3) an interpolation coefficient (i.e. at what proportion of directed segment AB the interpolate ecosystem state X needs to be).
 #' @noRd
 interpolateEcolStates <- function(d,ToInterpolate)
 {
