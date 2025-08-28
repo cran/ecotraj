@@ -1,8 +1,8 @@
 Package: ecotraj
 Type: Package
 Title: Ecological Trajectory Analysis
-Version: 1.1.0
-Date: 2025-05-05
+Version: 1.1.1
+Date: 2025-08-28
 Authors@R: c(
 	person('Miquel', 'De Cáceres', role=c('aut','cre'),
 	email='miquelcaceres@gmail.com', comment = c(ORCID = "0000-0001-7132-2080")),
@@ -31,7 +31,7 @@ Suggests: ape, vegclust, knitr, rmarkdown, RColorBrewer, smacof, vegan,
 LazyData: true
 BugReports: https://github.com/emf-creaf/ecotraj/issues
 Config/testthat/edition: 3
-Packaged: 2025-05-05 12:54:38 UTC; miquel
+Packaged: 2025-08-28 11:25:15 UTC; miquel
 Author: Miquel De Cáceres [aut, cre] (ORCID:
     <https://orcid.org/0000-0001-7132-2080>),
   Nicolas Djeghri [aut] (ORCID: <https://orcid.org/0000-0001-5740-3386>),
@@ -39,4 +39,4 @@ Author: Miquel De Cáceres [aut, cre] (ORCID:
   Javier De la Casa [ctb]
 Maintainer: Miquel De Cáceres <miquelcaceres@gmail.com>
 Repository: CRAN
-Date/Publication: 2025-05-05 13:30:02 UTC
+Date/Publication: 2025-08-28 12:40:02 UTC

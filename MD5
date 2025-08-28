@@ -1,9 +1,9 @@
-bc1163e7e4293dcda3899760ef857ec4 *DESCRIPTION
+6b4444f61fc96449542edff79aaad5a2 *DESCRIPTION
 b08ba62b7505d59902d0f89d0a4edda6 *NAMESPACE
-284ef1c533c66451298b3bd1ef744348 *NEWS.md
+3d7415a8824a71936f418c856f763927 *NEWS.md
 cfeadd55d5e31eaf471b44fe585697ec *R/RcppExports.R
 6465c8d99cad10ebb5056380278ac600 *R/circularUtils.R
-1c9578f933ca1f85915b7c772728912b *R/defineTrajectories.R
+b2f61723fcc70ffcd60031d040aacdf8 *R/defineTrajectories.R
 732d90bcff51422a70fe027c160ae615 *R/documentationAvoca.R
 d3d64bc609ad5ad1a91fc3c141cbd0dd *R/documentationCETA.R
 9b5a8248452f77cc4087972f02fe4ef5 *R/documentationEQA.R
@@ -13,9 +13,9 @@ e46118bc7a743530cf5d14af4c186a88 *R/documentationSITA.R
 145702511334a230f2bead83e713cbee *R/is.metric.R
 8eb0e79f2823c18cb2fc82191ecd19d1 *R/is.synchronous.R
 fe1654a0a9b139b9a9b994ba0692cd2b *R/referenceEnvelopes.R
-ff69e29f42c2884c0536c108c3abb71e *R/subsetTrajectories.R
+ff9173e969a1572d1bf6c48b20df8ff0 *R/subsetTrajectories.R
 76822a7fd7a89ae6ad922fd1a2bf8849 *R/trajectoryClustering.R
-d38f4a293216a1ad890bc93116306325 *R/trajectoryComparison.R
+b1af30cef1272dabd1880a69ae3257dc *R/trajectoryComparison.R
 de13c81d8bf47cd6efb89b48c40d67a2 *R/trajectoryCyclical.R
 c318d82ec037abcfec57a0f9bf5083ed *R/trajectoryCyclicalPlots.R
 f691686076803ebb871c90f0c80316cf *R/trajectoryMetrics.R
@@ -23,7 +23,7 @@ efdf7f66ccb7e0a07e234430e22bbb08 *R/trajectoryPlots.R
 b9d838c2742feff78fb8e60c5b50f4b8 *R/trajectoryProjection.R
 5d875489eb62d1d2f9744f403b4b1661 *R/trajectorySections.R
 91bf7f2807ab10da5aa9cdeba4401aa2 *R/transformTrajectories.R
-b52aabe9a2757fc86742763db9dafc9b *build/partial.rdb
+1bf18d9c216b8d95033f0bd2fe2906b2 *build/partial.rdb
 fa4f55f2a8e96d275e2f3d6dffda6c5b *data/avoca.rda
 a9fe558e760599eb6d7a4a2a34bd5333 *data/furseals.rda
 7451c321b2d81d74d210c9e8cea62c7e *data/glenan.rda
@@ -34,7 +34,7 @@ a9fe558e760599eb6d7a4a2a34bd5333 *data/furseals.rda
 89228a2a16fcb754a0fc83a7092f5237 *data/pike.rda
 c124ec54d51efc457120782f9aa6ea56 *inst/CITATION
 fd7ba4059da58e470691644d856437e7 *man/avoca.Rd
-4e1d0fe3fcc09a0e9e3191df22facfaa *man/defineTrajectories.Rd
+4be1ddacdc7a8335122fa4bde5a90466 *man/defineTrajectories.Rd
 af5574944f699039bb53971087f9b1c5 *man/dynamicVariation.Rd
 4708d8a29d28784f80f50109646f1119 *man/ecotraj-package.Rd
 03ee8492682082e6937aa19bfa1958d4 *man/figures/logo.png
@@ -48,7 +48,7 @@ e5e335952096ac2cbfb8380b32acf90f *man/isoscape.Rd
 9130ab5a84adbd84ad955b894d858a5a *man/northseaZoo.Rd
 2b69bafad1613e8ff00c02901ce4828b *man/pike.Rd
 9ce1b4506146cc30c04aa6afc40eb663 *man/referenceEnvelopes.Rd
-f7da74818174fa13f5822c3804fd06f4 *man/subsetTrajectories.Rd
+d2997e6b7da741bf48f8122636e066a3 *man/subsetTrajectories.Rd
 0eee563c5582e9f759847bc31a15eab6 *man/trajectoryComparison.Rd
 38f103b6a8d4877b1c514348f2cc09aa *man/trajectoryCyclical.Rd
 ba8c5e99028389d28b0297c736a1c316 *man/trajectoryCyclicalPlots.Rd
@@ -63,4 +63,4 @@ e7246089de829a236505c444484b6e59 *src/RcppExports.cpp
 b8f4b324f5afd3453816276924582b89 *tests/testthat/test_CETA.R
 47866d7dc817c8fbf254ccae6103aaaa *tests/testthat/test_EQA.R
 ea581546c4b8b6ea36daa8434ca7781f *tests/testthat/test_ETA.R
-3e46af6da17d5560cc8c8bd366e60eed *tests/testthat/test_TrajectoryDefinition.R
+7a47d6b391aedacffc786efe55907be1 *tests/testthat/test_TrajectoryDefinition.R

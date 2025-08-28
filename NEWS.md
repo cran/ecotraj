@@ -1,3 +1,8 @@
+# ecotraj 1.1.1
+* Trajectory subsetting according to time window limits
+* Bug correction in trajectory definition (missing surveys but existing times)
+* Bug correction in trajectory asymmetric tests (where done as symmetric previously)
+
 # ecotraj 1.1.0
 * New functions is.metric() and is.synchronous().
 * Update of function trajectoryInternalVariation() (former trajectoryVariability()).
