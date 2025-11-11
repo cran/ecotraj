@@ -1,8 +1,8 @@
 Package: ecotraj
 Type: Package
 Title: Ecological Trajectory Analysis
-Version: 1.1.1
-Date: 2025-08-28
+Version: 1.2.0
+Date: 2025-10-20
 Authors@R: c(
 	person('Miquel', 'De Cáceres', role=c('aut','cre'),
 	email='miquelcaceres@gmail.com', comment = c(ORCID = "0000-0001-7132-2080")),
@@ -17,21 +17,20 @@ Description: Analysis of temporal changes (i.e. dynamics) of ecological entities
     provided to estimate the ecological quality of ecosystem with respect to reference conditions 
     [Sturbois et al. (2023)  <doi:10.1002/ecs2.4726>].
 Depends: R (>= 3.5.0), Rcpp (>= 0.12.12)
-Imports: Kendall, MASS
+Imports: MASS
 LinkingTo: Rcpp
 License: GPL (>= 2)
 URL: https://emf-creaf.github.io/ecotraj/
 LazyLoad: yes
 Encoding: UTF-8
 NeedsCompilation: yes
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Suggests: ape, vegclust, knitr, rmarkdown, RColorBrewer, smacof, vegan,
-        ggplot2, hrbrthemes, reshape2, scales, tidyr, viridis, testthat
-        (>= 3.0.0)
+        ggplot2, reshape2, scales, tidyr, viridis, testthat (>= 3.0.0)
 LazyData: true
 BugReports: https://github.com/emf-creaf/ecotraj/issues
 Config/testthat/edition: 3
-Packaged: 2025-08-28 11:25:15 UTC; miquel
+Packaged: 2025-11-10 17:53:02 UTC; miquel
 Author: Miquel De Cáceres [aut, cre] (ORCID:
     <https://orcid.org/0000-0001-7132-2080>),
   Nicolas Djeghri [aut] (ORCID: <https://orcid.org/0000-0001-5740-3386>),
@@ -39,4 +38,4 @@ Author: Miquel De Cáceres [aut, cre] (ORCID:
   Javier De la Casa [ctb]
 Maintainer: Miquel De Cáceres <miquelcaceres@gmail.com>
 Repository: CRAN
-Date/Publication: 2025-08-28 12:40:02 UTC
+Date/Publication: 2025-11-11 06:10:40 UTC
