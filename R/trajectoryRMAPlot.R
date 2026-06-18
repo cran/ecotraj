@@ -36,7 +36,7 @@
 #' @author Miquel De \enc{Cáceres}{Caceres}, CREAF
 #' 
 #' @references
-#' Djeghri et al. (in preparation) Uncovering the relative movements of ecological trajectories.
+#' Djeghri N, Gauthier O, Sturbois A, Meiners SJ, Allen R, De Cáceres M (2026) Uncovering the relative movements of ecological trajectories. Peer Community Journal 6: e54.
 #'
 #' @seealso \code{\link{trajectoryRMA}}, \code{\link{trajectoryConvergencePlot}} 
 #'
@@ -81,43 +81,43 @@ trajectoryRMAPlot <- function(x,
                   "convdiv.complete",
                   "crossed.groups.complete")){
       relationships.colors <- c("white","grey70","grey30",
-                                "red3","red2",
-                                "blue3","blue2",
-                                "orange","orange",
-                                "deepskyblue","deepskyblue",
-                                "darkorange2",
-                                "darkorange2",
-                                "dodgerblue2",
-                                "dodgerblue2",
-                                "yellow2","yellow2",
-                                "green3","green3",
-                                "aquamarine2","aquamarine2")
+                                "#BA1E02FF","#E4460AFF",
+                                "#434FBBFF","#4686FBFF",
+                                "#FABA39FF","#FABA39FF",
+                                "#1AE4B6FF","#1AE4B6FF",
+                                "#FB8022FF",
+                                "#FB8022FF",
+                                "#28BBECFF",
+                                "#28BBECFF",
+                                "#D9E436FF","#D9E436FF",
+                                "#A2FC3CFF","#A2FC3CFF",
+                                "#56FA75FF","#56FA75FF")
       if (mode=="oriented.complete"){
-        relationships.colors[!is.na(x$dynamic_relationships_taxonomy$oriented_group)] <- "green3"
+        relationships.colors[!is.na(x$dynamic_relationships_taxonomy$oriented_group)] <- "#A2FC3CFF"
       }else if (mode=="convdiv.complete"){
-        relationships.colors[grep("convergence",x$dynamic_relationships_taxonomy$conv_div_group)] <- "red2"
-        relationships.colors[grep("divergence",x$dynamic_relationships_taxonomy$conv_div_group)] <- "blue2"
+        relationships.colors[grep("convergence",x$dynamic_relationships_taxonomy$conv_div_group)] <- "#BA1E02FF"
+        relationships.colors[grep("divergence",x$dynamic_relationships_taxonomy$conv_div_group)] <- "#434FBBFF"
       }else if (mode=="crossed.groups.complete"){
         conv <- grep("convergence",x$dynamic_relationships_taxonomy$conv_div_group)
         div <- grep("divergence",x$dynamic_relationships_taxonomy$conv_div_group)
         oriented <- grep("oriented",x$dynamic_relationships_taxonomy$oriented_group)
-        relationships.colors[intersect(conv,oriented)] <- "yellow2"
-        relationships.colors[intersect(div,oriented)] <- "aquamarine2"
+        relationships.colors[intersect(conv,oriented)] <- "#D9E436FF"
+        relationships.colors[intersect(div,oriented)] <- "#56FA75FF"
       }
     }else if(mode=="oriented"){
       relationships.colors <- rep(NA,nrow(x$dynamic_relationships_taxonomy))
-      relationships.colors[!is.na(x$dynamic_relationships_taxonomy$oriented_group)] <- "green3"
+      relationships.colors[!is.na(x$dynamic_relationships_taxonomy$oriented_group)] <- "#A2FC3CFF"
     }else if (mode=="convdiv"){
       relationships.colors <- rep(NA,nrow(x$dynamic_relationships_taxonomy))
-      relationships.colors[grep("convergence",x$dynamic_relationships_taxonomy$conv_div_group)] <- "red2"
-      relationships.colors[grep("divergence",x$dynamic_relationships_taxonomy$conv_div_group)] <- "blue2"
+      relationships.colors[grep("convergence",x$dynamic_relationships_taxonomy$conv_div_group)] <- "#BA1E02FF"
+      relationships.colors[grep("divergence",x$dynamic_relationships_taxonomy$conv_div_group)] <- "#434FBBFF"
     }else if(mode=="crossed.groups"){
       relationships.colors <- rep(NA,nrow(x$dynamic_relationships_taxonomy))
       conv <- grep("convergence",x$dynamic_relationships_taxonomy$conv_div_group)
       div <- grep("divergence",x$dynamic_relationships_taxonomy$conv_div_group)
       oriented <- grep("oriented",x$dynamic_relationships_taxonomy$oriented_group)
-      relationships.colors[intersect(conv,oriented)] <- "yellow2"
-      relationships.colors[intersect(div,oriented)] <- "aquamarine2"
+      relationships.colors[intersect(conv,oriented)] <- "#D9E436FF"
+      relationships.colors[intersect(div,oriented)] <- "#56FA75FF"
       
     }else stop("Invalid string for 'mode'.")
     names(relationships.colors) <- x$dynamic_relationships_taxonomy$dynamic_relationship
@@ -193,18 +193,22 @@ trajectoryRMAPlot <- function(x,
                                             function(x) which(x == "(")))-2))
     
     relationships.colors <- relationships.colors[unique(names(relationships.colors))]
-    relationships.colors <- relationships.colors[c("neutral","parallel","antiparallel",
+    relationships.colors <- relationships.colors[c("non-significant","parallel","antiparallel",
                                                    "convergence","weak convergence","approaching","weak approaching",
                                                    "catch-up","pursuit","escape",
                                                    "weak departing","departing","weak divergence","divergence")]
     relationships.colors[is.na(relationships.colors)] <- "black"
     
     leg <- legend(x=ncols,y=nrows,xpd=NA,bty="n",cex=0.7,title="Relative movement\nrelationships",title.font=2,text.font=1,
-                  fill=relationships.colors[1:3],names(relationships.colors)[1:3])
+                  fill=relationships.colors[2:3],names(relationships.colors)[2:3])
     
     leg <- legend(x=ncols,y=leg$rect$top-leg$rect$h,title="Relative movement",title.font=2,text.font=1,title.col="white",
                   xpd=NA,bty="n",cex=0.7,
                   fill=relationships.colors[-(1:3)],names(relationships.colors)[-(1:3)])
+    legend(x=ncols,y=leg$rect$top-leg$rect$h,title="Relative movement",title.font=2,text.font=1,title.col="white",
+           xpd=NA,bty="n",cex=0.7,
+           fill=relationships.colors[1],names(relationships.colors)[1])
+    
     ydist <- (leg$text$y[1]-leg$text$y[2])/2
     rect(xleft=leg$rect$left+ncols/100,xright=leg$rect$left+leg$rect$w,
          ytop=c(leg$text$y[1]+ydist,leg$text$y[7]+ydist),

@@ -6,6 +6,7 @@
 \alias{smoothTrajectories}
 \alias{centerTrajectories}
 \alias{interpolateTrajectories}
+\alias{averageTrajectories}
 \title{Transform trajectories}
 \usage{
 smoothTrajectories(
@@ -17,10 +18,17 @@ smoothTrajectories(
 
 centerTrajectories(x, exclude = integer(0))
 
+averageTrajectories(
+  x,
+  group = NULL,
+  keep_members = FALSE,
+  output_name = "average"
+)
+
 interpolateTrajectories(x, times)
 }
 \arguments{
-\item{x}{An object of class \code{\link{trajectories}}.}
+\item{x}{An object of class \code{\link{trajectories}} (or of a sub-class such as \code{\link{cycles}}). Function \code{averageTrajectories} requires synchronous input trajectories.}
 
 \item{survey_times}{A vector indicating the survey time for all surveys (if \code{NULL}, time between consecutive surveys is considered to be one)}
 
@@ -28,25 +36,37 @@ interpolateTrajectories(x, times)
 
 \item{fixed_endpoints}{A logical flag to force keeping the location of trajectory endpoints unmodified}
 
-\item{exclude}{An integer vector indicating sites that are excluded from trajectory centroid computation. Note: for objects of class \code{\link{cycles}}, \code{external} are excluded by default.}
+\item{exclude}{An integer vector indicating observations that are excluded from trajectory centroid computation. Note: for objects of class \code{\link{cycles}}, \code{external} are excluded by default.}
+
+\item{group}{Character vector of the sites (trajectories) to be averaged. If \code{NULL} all trajectories contribute to the average}
+
+\item{keep_members}{Boolean flag to keep the group member trajectories in the result}
+
+\item{output_name}{A string with the name for the average trajectory}
 
 \item{times}{A numeric vector indicating new observation times for trajectories. Values should be comprised between time limits of the original trajectories.}
 }
 \value{
-A modified object of class \code{\link{trajectories}}, where distance matrix has been transformed. When calling \code{interpolateTrajectories}, also the
-number of observations and metadata is likely to be affected.
+A modified object of class \code{\link{trajectories}}, where distance matrix has been transformed. When calling \code{interpolateTrajectories} and \code{averageTrajectories},
+also the number of observations and metadata is likely to be affected.
 }
 \description{
 The following functions are provided to transform trajectories:
 \itemize{
 \item{Function \code{smoothTrajectories} performs multivariate smoothing on trajectory data using a Gaussian kernel.}
 \item{Function \code{centerTrajectories} shifts all trajectories to the center of the multivariate space and returns a modified distance matrix.}
+\item{Function \code{averageTrajectories} creates an "average" trajectory where the position of each observation is the average of the position of the corresponding observations of the input trajectories. }
 \item{Function \code{interpolateTrajectories} relocates trajectory ecological states to those corresponding to input times, via interpolation.}
 }
 }
 \details{
-Details of calculations are given in De \enc{Cáceres}{Caceres} et al (2019).
-Function \code{centerTrajectories} performs centering of trajectories using matrix algebra as explained in Anderson (2017).
+We recommend reading the article "Transforming trajectories" on the package website prior to use these functions.
+
+Details of calculations for trajectory centering are given in De \enc{Cáceres}{Caceres} et al (2019).
+Functions \code{centerTrajectories} and \code{averageTrajectories} perform centering/averaging of trajectories using matrix algebra as explained in Anderson (2017).
+
+When using transformation functions on objects of class \code{\link{cycles}} or \code{\link{fd.trajectories}}, the corresponding transformations are applied to trajectory subsections (e.g. cycles) instead of
+being applied to the whole trajectory.
 }
 \references{
 De \enc{Cáceres}{Caceres} M, Coll L, Legendre P, Allen RB, Wiser SK, Fortin MJ, Condit R & Hubbell S. (2019). Trajectory analysis in community ecology. Ecological Monographs 89, e01350.
@@ -54,7 +74,7 @@ De \enc{Cáceres}{Caceres} M, Coll L, Legendre P, Allen RB, Wiser SK, Fortin MJ,
 Anderson (2017). Permutational Multivariate Analysis of Variance (PERMANOVA). Wiley StatsRef: Statistics Reference Online. 1-15. Article ID: stat07841.
 }
 \seealso{
-\code{\link{trajectoryPlot}} \code{\link{trajectoryMetrics}}
+\code{\link{trajectoryPlot}} \code{\link{trajectoryMetrics}} \code{\link{trajectoryComparison}}
 }
 \author{
 Miquel De \enc{Cáceres}{Caceres}, CREAF

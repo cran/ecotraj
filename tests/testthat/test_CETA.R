@@ -37,7 +37,14 @@ test_that("Fixed date trajectories can be build, subset and analyzed",{
   expect_s3_class(trajectoryInternalVariation(fdtrajToy), "data.frame")
   expect_s3_class(trajectoryMetrics(fdtrajToy), "data.frame")
   expect_type(segmentDistances(fdtrajToy), "list")
-  expect_s3_class(trajectoryDistances(fdtrajToy), "dist")
+  expect_s3_class(trajectoryDistances(fdtrajToy, distance.type = "Hausdorff"), "dist")
+  expect_s3_class(trajectoryDistances(fdtrajToy, distance.type = "SPD"), "dist")
+  expect_s3_class(trajectoryDistances(fdtrajToy, distance.type = "DSPD"), "dist")
+  expect_s3_class(trajectoryDistances(fdtrajToy, distance.type = "TSPD"), "dist")
+  expect_type(dynamicVariation(fdtrajToy, distance.type = "Hausdorff"), "list")
+  expect_type(dynamicVariation(fdtrajToy, distance.type = "SPD"), "list")
+  expect_type(dynamicVariation(fdtrajToy, distance.type = "DSPD"), "list")
+  expect_type(dynamicVariation(fdtrajToy, distance.type = "TSPD"), "list")
 })
 
 test_that("Cycles can be build, subset and analyzed",{
@@ -48,6 +55,7 @@ test_that("Cycles can be build, subset and analyzed",{
   expect_s3_class(subsetTrajectories(cycleToy, subtrajectory_selection = "A_C3"), "cycles")
   expect_s3_class(centerTrajectories(cycleToy), "cycles")
   expect_s3_class(smoothTrajectories(cycleToy), "cycles")
+  expect_s3_class(averageTrajectories(cycleToy), "cycles")
   expect_s3_class(trajectoryLengths(cycleToy), "data.frame")
   expect_s3_class(trajectorySpeeds(cycleToy), "data.frame")
   expect_warning(trajectoryMetrics(cycleToy))
@@ -56,8 +64,15 @@ test_that("Cycles can be build, subset and analyzed",{
   expect_type(trajectoryDirectionality(cycleToy), "double")
   expect_s3_class(trajectoryInternalVariation(cycleToy), "data.frame")
   expect_type(segmentDistances(cycleToy), "list")
-  expect_s3_class(trajectoryDistances(cycleToy), "dist")
-
+  expect_s3_class(trajectoryDistances(cycleToy, distance.type = "Hausdorff"), "dist")
+  expect_s3_class(trajectoryDistances(cycleToy, distance.type = "SPD"), "dist")
+  expect_s3_class(trajectoryDistances(cycleToy, distance.type = "DSPD"), "dist")
+  expect_s3_class(trajectoryDistances(cycleToy, distance.type = "TSPD"), "dist")
+  expect_type(dynamicVariation(cycleToy, distance.type = "Hausdorff"), "list")
+  expect_type(dynamicVariation(cycleToy, distance.type = "SPD"), "list")
+  expect_type(dynamicVariation(cycleToy, distance.type = "DSPD"), "list")
+  expect_type(dynamicVariation(cycleToy, distance.type = "TSPD"), "list")
+  
   expect_type(cycleConvexity(xToy, cycleDuration = cycleDurationToy), "double")
   expect_s3_class(cycleShifts(xToy, cycleDuration = cycleDurationToy), "data.frame")
   

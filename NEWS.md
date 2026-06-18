@@ -1,3 +1,10 @@
+# ecotraj 1.2.2
+* New function averageTrajectories() to average trajectories (or cycles)
+
+# ecotraj 1.2.1
+* When using trajectoryDistances with "cycles" objects the elements to be compared are cycles and dates are used for time comparison. 
+* Bug correction in extractCycles() by N. Djeghri
+
 # ecotraj 1.2.0
 * New functions trajectoryConvergencePlot() and cycleShiftArrows() by N. Djeghri
 * New functions trajectoryCorrespondence(), trajectoryRMA() and trajectoryRMAPlot() by N. Djeghri
@@ -18,7 +25,7 @@
 
 # ecotraj 1.0.0
 * Trajectory data structures have been introduced.
-* New functions for cyclical trajectory analysis (Djeghri et al, in prep.).
+* New functions for cyclical trajectory analysis (Djeghri et al, 2026).
 * New ETA metrics trajectoryVariability() and trajectorySpeeds().
 * Permutational test added for trajectoryDirectionality().
 * New function trajectoryMetrics() for evaluation of multiple metrics.

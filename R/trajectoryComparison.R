@@ -39,6 +39,8 @@
 #'     \item{\code{TSPD}: Time-Sensitive Path Distance (experimental).}
 #'  }
 #'  
+#'  When using \code{trajectoryDistances} on trajectory cycles, then the elements to be compared are cycles. In this case, if TSPD is used the time of the first survey is subtracted to all times of the cycle, so that cycle dates are effectively used. 
+#'  
 #'  Function \code{trajectoryConvergence} is used to study convergence/divergence between trajectories. There are three possible tests, the first two concerning pairwise comparisons between trajectories.
 #'  \enumerate{
 #'     \item{If \code{type = "pairwise.asymmetric"} then all pairwise comparisons are considered and the test is asymmetric, meaning that we test for trajectory A approaching trajectory B along time. 
@@ -272,6 +274,11 @@ trajectoryDistances<-function(x, distance.type="DSPD", symmetrization = "mean" ,
     sites <- x$metadata$fdT
   } else if(inherits(x, "cycles")) {
     sites <- x$metadata$cycles
+    # This allows comparing the appropriate times in TSPD
+    for(c in unique(sites)) {
+      sel_c <- (sites==c)
+      times[sel_c] <- times[sel_c] - min(times[sel_c])
+    }
   } else if(inherits(x, "sections")) {
     sites <- x$metadata$sections
   } else {
@@ -285,8 +292,7 @@ trajectoryDistances<-function(x, distance.type="DSPD", symmetrization = "mean" ,
   for(i in 1:nsite) nsurveysite[i] = sum(sites==siteIDs[i])
   if(sum(nsurveysite==1)>0) stop("All sites need to be surveyed at least twice")
   n <- nrow(as.matrix(d))
-  nseg <- sum(nsurveysite)-nsite
-  
+
   #Init output
   dtraj <- matrix(NA, nrow=nsite, ncol = nsite)
   rownames(dtraj) <- siteIDs
@@ -446,7 +452,6 @@ trajectoryDistances<-function(x, distance.type="DSPD", symmetrization = "mean" ,
               t_high <- min(t_comp2[sel_heq])
               i_high <- which(t_comp2==t_high)
             }
-            
             if(!is.na(i_low) & !is.na(i_high)) {
               if(i_low != i_high) {
                 p <- (t_comp1[j] - t_low)/(t_high - t_low)
@@ -537,8 +542,11 @@ trajectoryConvergence<-function(x, type = "pairwise.asymmetric", add = TRUE){
   # This allows treating fixed date trajectories as sites for plotting purposes
   if(inherits(x, "fd.trajectories")) {
     sites <- x$metadata$fdT
+    times <- times - x$metadata$dates
   } else if(inherits(x, "cycles")) {
     sites <- x$metadata$cycles
+    times <- x$metadata$dates
+    warning("Cycles are trajectories coming back near their starting position: The notion of trajectory convergence may have little sense")
   } else if(inherits(x, "sections")) {
     sites <- x$metadata$sections
   } else {
